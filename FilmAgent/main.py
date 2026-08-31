@@ -5,7 +5,7 @@ import random
 import copy
 
 # TO DO
-ROOT_PATH = "/path/to/FilmAgent"
+ROOT_PATH = "D:/AI/FilmAgent-main/FilmAgent"
 # TO DO
 
 class FilmCrafter:
