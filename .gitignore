@@ -11,3 +11,6 @@ Thumbs.db
 
 # ⚠️ 重要：API 密钥文件——绝不能上传到 git（防止密钥泄露）
 FilmAgent/api_key.txt
+
+# 运行日志：每次运行都会生成，不进版本库
+FilmAgent/Logs/
