@@ -8,3 +8,6 @@ __pycache__/
 Thumbs.db
 
 # 生成的中间结果（保留 Script 输出反而更利于复现对比，这里不忽略）
+
+# ⚠️ 重要：API 密钥文件——绝不能上传到 git（防止密钥泄露）
+FilmAgent/api_key.txt

@@ -4,10 +4,24 @@ from openai import OpenAI
 
 
 # ============================================================
-# ★ 在这里填你的 API Key（DeepSeek 平台 https://platform.deepseek.com 注册申请）
+# ★ API Key 配置（DeepSeek 平台 https://platform.deepseek.com 注册申请）
 # DeepSeek 的接口是 OpenAI 兼容格式，所以用 openai 库 + base_url 指过去即可。
-api_key = "sk-把你的DeepSeek密钥填在这里"
 base_url = "https://api.deepseek.com"
+
+
+def _load_api_key():
+    # 密钥存在本地文件 api_key.txt 里（该文件已被 .gitignore 忽略，不会上传到 git，避免泄露）
+    key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "api_key.txt")
+    if os.path.exists(key_file):
+        with open(key_file, "r", encoding="utf-8") as f:
+            key = f.read().strip()
+            if key:
+                return key
+    # 读不到就用占位符（会导致认证失败，提醒你还没配置密钥）
+    return "sk-在这里填你的DeepSeek密钥"
+
+
+api_key = _load_api_key()
 # ============================================================
 
 def GPTCall(prompt):
