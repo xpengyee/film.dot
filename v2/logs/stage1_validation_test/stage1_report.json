@@ -1,0 +1,103 @@
+{
+  "stage": "stage1_validation_test",
+  "total": 19,
+  "passed": 19,
+  "llm_calls": 0,
+  "results": [
+    {
+      "name": "T1 合法地点",
+      "ok": true,
+      "detail": "errors=OK (0 errors)"
+    },
+    {
+      "name": "T2 非法地点",
+      "ok": true,
+      "detail": "INVALID_LOCATION 命中=True; 错误总数=1"
+    },
+    {
+      "name": "T3 编号变体剥离",
+      "ok": true,
+      "detail": "has_action('Standing Talking 5') 应为 True"
+    },
+    {
+      "name": "T3 编号变体剥离-镜头",
+      "ok": true,
+      "detail": "has_shot('Long Shot 2') 应为 True"
+    },
+    {
+      "name": "T3 非法动作",
+      "ok": true,
+      "detail": "INVALID_ACTION 命中=True"
+    },
+    {
+      "name": "T4 非法镜头",
+      "ok": true,
+      "detail": "INVALID_SHOT 命中=True"
+    },
+    {
+      "name": "T5 非法站位点",
+      "ok": true,
+      "detail": "INVALID_POSITION 命中=True; errors=[EnumValidator] INVALID_POSITION at scene[4].initial_positions[0].position\n  Position does not exist in location 'Billiard room'.\n  actual  : 'Position 999'\n  expected: ['Position 1', 'Position 2', 'Position 3', 'Position 4']"
+    },
+    {
+      "name": "T5 走位目标非法",
+      "ok": true,
+      "detail": "move.destination 的非法位置应被拦截"
+    },
+    {
+      "name": "T6 非法角色(speaker)",
+      "ok": true,
+      "detail": "UNKNOWN_CHARACTER 命中=True"
+    },
+    {
+      "name": "T6 非法角色(who)",
+      "ok": true,
+      "detail": "who 里的未知角色也应被拦截"
+    },
+    {
+      "name": "T7 双向转换后与原数据完全相等",
+      "ok": true,
+      "detail": "共 3 个场景；deep-equal=相等"
+    },
+    {
+      "name": "T7 核心字段完整性",
+      "ok": true,
+      "detail": "场景=3 行=49(台词47/走位2) 动作=61 镜头=49 位置=152 初始站位=9"
+    },
+    {
+      "name": "T7 真实最终剧本整体校验",
+      "ok": true,
+      "detail": "0 errors"
+    },
+    {
+      "name": "T8 scenes_2 变体(scene_information/dialogues)",
+      "ok": true,
+      "detail": "where='Apartment living room'; 首行 speaker='Ivy'"
+    },
+    {
+      "name": "T8 scenes_8 变体(sceneinformation/selected shot/reason/insertion)",
+      "ok": true,
+      "detail": "who 一致=True; 动作 reason 保留=True"
+    },
+    {
+      "name": "T9 真实数据 state ⊆ 合法集合",
+      "ok": true,
+      "detail": "实测状态=['standing']; 不在合法集合的=[]"
+    },
+    {
+      "name": "T10 重试不覆盖轨迹",
+      "ok": true,
+      "detail": "attempts=['scenes_5.json', 'scenes_5_v2.json', 'scenes_5_v3.json']; approved_output=scenes_5_v3.json; 历史版本未删除=True"
+    },
+    {
+      "name": "T10 WorkflowState 可查到步骤",
+      "ok": true,
+      "detail": "step() 命中"
+    },
+    {
+      "name": "T11 角色清单 round-trip",
+      "ok": true,
+      "detail": "角色数=4; deep-equal=相等"
+    }
+  ]
+}

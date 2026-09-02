@@ -1,0 +1,53 @@
+================================================================
+V0.2 阶段 1 —— 纯代码测试（零 LLM）
+================================================================
+资产注册表: AssetRegistry(locations=15, actions=20, shots=9)
+角色清单  : ['Mercy', 'Caleb', 'Ivy', 'Theo']
+
+--- T1 合法地点 ---
+[PASS] T1 合法地点  ->  errors=OK (0 errors)
+
+--- T2 非法地点 ---
+[PASS] T2 非法地点  ->  INVALID_LOCATION 命中=True; 错误总数=1
+
+--- T3 非法动作 ---
+[PASS] T3 编号变体剥离  ->  has_action('Standing Talking 5') 应为 True
+[PASS] T3 编号变体剥离-镜头  ->  has_shot('Long Shot 2') 应为 True
+[PASS] T3 非法动作  ->  INVALID_ACTION 命中=True
+
+--- T4 非法镜头 ---
+[PASS] T4 非法镜头  ->  INVALID_SHOT 命中=True
+
+--- T5 非法站位点 ---
+[PASS] T5 非法站位点  ->  INVALID_POSITION 命中=True; errors=[EnumValidator] INVALID_POSITION at scene[4].initial_positions[0].position
+  Position does not exist in location 'Billiard room'.
+  actual  : 'Position 999'
+  expected: ['Position 1', 'Position 2', 'Position 3', 'Position 4']
+[PASS] T5 走位目标非法  ->  move.destination 的非法位置应被拦截
+
+--- T6 非法角色 ---
+[PASS] T6 非法角色(speaker)  ->  UNKNOWN_CHARACTER 命中=True
+[PASS] T6 非法角色(who)  ->  who 里的未知角色也应被拦截
+
+--- T7 script/0.json Round-trip ---
+[PASS] T7 双向转换后与原数据完全相等  ->  共 3 个场景；deep-equal=相等
+[PASS] T7 核心字段完整性  ->  场景=3 行=49(台词47/走位2) 动作=61 镜头=49 位置=152 初始站位=9
+[PASS] T7 真实最终剧本整体校验  ->  0 errors
+
+--- T8 字段名变体兼容 ---
+[PASS] T8 scenes_2 变体(scene_information/dialogues)  ->  where='Apartment living room'; 首行 speaker='Ivy'
+[PASS] T8 scenes_8 变体(sceneinformation/selected shot/reason/insertion)  ->  who 一致=True; 动作 reason 保留=True
+
+--- T9 state 覆盖 ---
+[PASS] T9 真实数据 state ⊆ 合法集合  ->  实测状态=['standing']; 不在合法集合的=[]
+
+--- T10 重试不覆盖轨迹 ---
+[PASS] T10 重试不覆盖轨迹  ->  attempts=['scenes_5.json', 'scenes_5_v2.json', 'scenes_5_v3.json']; approved_output=scenes_5_v3.json; 历史版本未删除=True
+[PASS] T10 WorkflowState 可查到步骤  ->  step() 命中
+
+--- T11 角色清单 round-trip ---
+[PASS] T11 角色清单 round-trip  ->  角色数=4; deep-equal=相等
+
+================================================================
+测试结果：19/19 通过
+LLM calls = 0（本阶段没有任何 LLM 调用）

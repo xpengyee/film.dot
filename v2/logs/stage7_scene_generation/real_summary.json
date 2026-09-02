@@ -1,0 +1,70 @@
+{
+  "stage": "stage7_scene_generation",
+  "suite": "run_real_scene_generation",
+  "real_llm_calls": 3,
+  "per_call": [
+    {
+      "request_id": "a37f814a5cc6426db979d8a8d89fcbfc",
+      "step": "scene_generation",
+      "agent": "scene_generation",
+      "model": "deepseek-chat",
+      "total_tokens": 3691,
+      "estimated_cost": 0.018655,
+      "success": true,
+      "retry_count": 0,
+      "duration_ms": 15063
+    },
+    {
+      "request_id": "97a628c7212e481bad7b8820894c3baa",
+      "step": "scene_generation",
+      "agent": "scene_generation",
+      "model": "deepseek-chat",
+      "total_tokens": 3421,
+      "estimated_cost": 0.016621,
+      "success": true,
+      "retry_count": 0,
+      "duration_ms": 9343
+    },
+    {
+      "request_id": "0ca2890df9b8406bbb56fac7c1c483b2",
+      "step": "scene_generation",
+      "agent": "scene_generation",
+      "model": "deepseek-chat",
+      "total_tokens": 4383,
+      "estimated_cost": 0.024889,
+      "success": true,
+      "retry_count": 0,
+      "duration_ms": 13688
+    }
+  ],
+  "total_tokens": 11495,
+  "estimated_cost": 0.060165,
+  "results": [
+    {
+      "name": "T21 真实调用（第 1 场）：解析成 Scene 且通过 Validator（含重试兜底）",
+      "ok": true,
+      "detail": "who=['Caleb', 'Ivy', 'Theo'] @ Apartment living room; lines=10; 第1次被Validator拦截=无; 中途异常=无; 最终 validator errors=[]"
+    },
+    {
+      "name": "T22 真实调用（第 2 场）：另一场景规范同样生成合法 Scene（含重试兜底）",
+      "ok": true,
+      "detail": "who=['Mercy', 'Caleb'] @ Apartment kitchen; lines=11; 中途异常=无; 最终 validator errors=[]"
+    },
+    {
+      "name": "T23 真实 token / cost / request_id 正确记录",
+      "ok": true,
+      "detail": "成功记录数=2; 最近一条 total_tokens=3421, cost=0.016621, request_id=97a628c7212e..., retry_count=0"
+    },
+    {
+      "name": "T24 真实环境失败路径：能记录错误且不崩溃",
+      "ok": true,
+      "detail": "抛异常=True; 失败记录数=1; retry_count=1; error=LLMConnectionError: simulated network failure (T24)"
+    },
+    {
+      "name": "T25 完整 Workflow 真实走一遍（落盘 + Review approved）",
+      "ok": true,
+      "detail": "run=success; scene=APPROVED; files=['scene_1.json']; approved=scene_1.json; review_id=review-01e99e710b"
+    }
+  ],
+  "masked_api_key": "sk-****6509"
+}

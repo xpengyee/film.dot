@@ -1,0 +1,154 @@
+{
+  "stage": "stage7_scene_generation",
+  "summary": "29/29 通过",
+  "real_llm_calls": 0,
+  "total_tokens": 0,
+  "estimated_cost": 0.0,
+  "results": [
+    {
+      "name": "T01 Scene Generation Agent 可被正常初始化",
+      "ok": true,
+      "detail": "name=scene_generation; known=['Mercy', 'Caleb', 'Ivy', 'Theo']"
+    },
+    {
+      "name": "T02 Scene Generation Agent 正确声明 needs（且都已被注册）",
+      "ok": true,
+      "detail": "needs=['project_info', 'approved_facts', 'characters', 'locations', 'actions', 'shots']; needs_review=True"
+    },
+    {
+      "name": "T03 ContextAssembler 能提供 Scene 所需全部上下文（含真实资产）",
+      "ok": true,
+      "detail": "keys=['actions', 'approved_facts', 'characters', 'locations', 'project_info', 'shots']; locations=15 个; actions=20 个; shots=9 个"
+    },
+    {
+      "name": "T04 Mock LLM 合法输出 -> Agent 解析成 V0.2 Scene 对象",
+      "ok": true,
+      "detail": "who=['Caleb', 'Ivy']; where=Apartment living room; lines=1"
+    },
+    {
+      "name": "T05 合法 Scene 能通过 Validator（0 错误）",
+      "ok": true,
+      "detail": "errors=[]"
+    },
+    {
+      "name": "T06 Validator 拒绝：未知角色 Charlie",
+      "ok": true,
+      "detail": "期望含 UNKNOWN_CHARACTER; 实际 errors=['[ReferenceValidator] UNKNOWN_CHARACTER at scene[1].info.who[2]', '[ReferenceValidator] UNKNOWN_CHARACTER at scene[1].initial_positions[1].character']"
+    },
+    {
+      "name": "T06 Validator 拒绝：非法地点",
+      "ok": true,
+      "detail": "期望含 INVALID_LOCATION; 实际 errors=['[EnumValidator] INVALID_LOCATION at scene[1].info.where']"
+    },
+    {
+      "name": "T06 Validator 拒绝：非法动作",
+      "ok": true,
+      "detail": "期望含 INVALID_ACTION; 实际 errors=['[EnumValidator] INVALID_ACTION at scene[1].lines[0].actions[0].action']"
+    },
+    {
+      "name": "T06 Validator 拒绝：非法镜头",
+      "ok": true,
+      "detail": "期望含 INVALID_SHOT; 实际 errors=['[EnumValidator] INVALID_SHOT at scene[1].lines[0].shot']"
+    },
+    {
+      "name": "T06 Validator 拒绝：非法站位点",
+      "ok": true,
+      "detail": "期望含 INVALID_POSITION; 实际 errors=['[EnumValidator] INVALID_POSITION at scene[1].lines[0].positions[0].position', '[EnumValidator] INVALID_POSITION at scene[1].initial_positions[0].position']"
+    },
+    {
+      "name": "T06 Validator 拒绝：缺 where（scene_spec 也不提供）",
+      "ok": true,
+      "detail": "期望含 MISSING_LOCATION; 实际 errors=['[EnumValidator] MISSING_LOCATION at scene[1].info.where']"
+    },
+    {
+      "name": "T07 非法输出进入 retry（重试后成功，2 次 LLM 调用）",
+      "ok": true,
+      "detail": "status=APPROVED; calls=2; files=['scene_1.json', 'scene_1_v2.json']; attempts=2"
+    },
+    {
+      "name": "T08 retry 不覆盖旧 Artifact（双版本并存且内容不同）",
+      "ok": true,
+      "detail": "v1 含 Charlie=True; v2 不含 Charlie=True"
+    },
+    {
+      "name": "T09 连续三次非法 JSON -> Workflow FAILED 停止（不落盘）",
+      "ok": true,
+      "detail": "status=FAILED; attempts=3; files=[]"
+    },
+    {
+      "name": "T10 scene_spec 兜底 who/where（LLM 缺字段时用场景规范补齐）",
+      "ok": true,
+      "detail": "where=Apartment living room; who=['Caleb', 'Ivy', 'Theo']"
+    },
+    {
+      "name": "T11 跨集一致性：第二集继续使用已有角色，不创建新角色档案",
+      "ok": true,
+      "detail": "who=['Caleb', 'Ivy']; 全部在已有角色内=True"
+    },
+    {
+      "name": "T12 candidate 不自动进入 approved_facts；Scene 只用 approved_facts",
+      "ok": true,
+      "detail": "approved 条数=1; ctx 条数=1; payload 含 approved=True, 含 candidate=False"
+    },
+    {
+      "name": "T13 Review APPROVED 能继续（下游步骤执行）",
+      "ok": true,
+      "detail": "run=success; scene=APPROVED; review=review-4825794b58; downstream=SUCCESS"
+    },
+    {
+      "name": "T14 Review APPROVED_WITH_EDIT 写新版本不覆盖原始文件",
+      "ok": true,
+      "detail": "status=APPROVED_WITH_EDIT; files=['scene_1.json', 'scene_1_v2.json']"
+    },
+    {
+      "name": "T15 Review REJECTED 能停止流程（下游不执行）",
+      "ok": true,
+      "detail": "run=failed; scene=REJECTED; 下游存在=False"
+    },
+    {
+      "name": "T16 LLM 调用经过 LLMClient（request_id/token/cost 记录）",
+      "ok": true,
+      "detail": "命中记录数=20; tokens=[40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40]; cost=[0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021, 0.00021]"
+    },
+    {
+      "name": "T17 不同 scene_id 产生独立 artifact（scene_1 / scene_2）",
+      "ok": true,
+      "detail": "scene_1 files=['scene_1.json']; scene_2 files=['scene_2.json']"
+    },
+    {
+      "name": "T18 Workflow resume：已批准 Step 直接 SKIPPED（不再调 LLM）",
+      "ok": true,
+      "detail": "run1=APPROVED; resume=SKIPPED; calls=1"
+    },
+    {
+      "name": "T19 artifact 落盘内容能读回为 Scene（版本化产物可恢复）",
+      "ok": true,
+      "detail": "where=Apartment living room; lines=1"
+    },
+    {
+      "name": "T26 V0.1 完整性检查通过",
+      "ok": true,
+      "detail": "HEAD=344c0c6; v0.1=344c0c6; diff空=True; status='?? CLAUDE.md\\n?? v2/'"
+    },
+    {
+      "name": "R1 阶段 1 回归（19/19）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '19/19 通过'=True"
+    },
+    {
+      "name": "R2 阶段 3 回归（38/38）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '38/38 通过'=True"
+    },
+    {
+      "name": "R3 阶段 4 回归（25/25，含阶段2 mock 复验）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '25/25 通过'=True"
+    },
+    {
+      "name": "R4 阶段 6 回归（24/24，mock）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '24/24 通过'=True"
+    }
+  ]
+}

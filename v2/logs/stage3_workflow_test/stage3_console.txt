@@ -1,0 +1,57 @@
+================================================================
+V0.2 阶段 3 —— Workflow 引擎测试（纯本地，0 次真实 LLM 调用）
+================================================================
+artifact 目录 = D:\AI\FilmAgent-main\v2\logs\stage3_workflow_test\project_001
+run 日志目录  = D:\AI\FilmAgent-main\v2\logs\stage3_workflow_test\runs
+
+[PASS] T1 单 Step 成功(run.status=success)  ->  run.status=success
+[PASS] T3 Step 状态正确(SUCCESS)  ->  stepA.status=SUCCESS
+[PASS] T1 产出已落盘(approved_artifact)  ->  filename=stepA.json
+[PASS] T1 落盘内容可读回  ->  read={'step': 'stepA', 'value': 'stepA-value'}
+
+[PASS] T2 多 Step 顺序执行  ->  order=['stepA', 'stepB', 'stepC']; 全部=True
+[PASS] T4 Step 输出正确传递(B 读到了 A 的产出)  ->  B.read={'from_upstream': {'step': 'stepA', 'value': 'stepA-value'}}
+[PASS] T3 各 Step 状态正确  ->  ['SUCCESS', 'SUCCESS', 'SUCCESS']
+
+[PASS] T5 Step 失败能够被捕获(不崩)  ->  run.status=failed; stepB.status=FAILED
+[PASS] T5 失败即停(下游不再执行)  ->  steps={'stepB', 'stepA'}
+[PASS] T14 错误信息完整  ->  attempt1.error=StepError: 故意失败：run 阶段抛出
+
+[PASS] T6 不可重试只尝试 1 次(不无限重试)  ->  max_attempts=3 但实际尝试 1 次
+[PASS] T6 失败原因被记录  ->  attempt1.error=ArtifactError: 写入失败（不可重试）
+
+[PASS] T7 可重试错误重试后成功  ->  stepY.status=SUCCESS
+[PASS] T8 retry 次数正确(共 2 次尝试)  ->  attempts=['FAILED', 'SUCCESS']
+[PASS] T8 第1次失败/第2次成功  ->  [FAILED, SUCCESS]
+[PASS] T8 最终采用第2版(approved=stepY_v2.json)  ->  approved=stepY_v2.json
+[PASS] T9 第一次失败 artifact 保留(stepY.json 存在)  ->  files=['stepY.json', 'stepY_v2.json']
+[PASS] T10 第二次成功 artifact 保留(stepY_v2.json 存在)
+
+[PASS] T16 三次尝试状态序列[FAIL,FAIL,SUCCESS]  ->  statuses=['FAILED', 'FAILED', 'SUCCESS']
+[PASS] T16 最终 run 成功且批准 v3  ->  approved=scenes_5_v3.json
+[PASS] T11 磁盘三份文件全部保留  ->  files=['scenes_5.json', 'scenes_5_v2.json', 'scenes_5_v3.json']
+[PASS] T9/T10/T11 三份内容分别=attempt-1/2/3(不互相覆盖)  ->  v1=attempt-1, v2=attempt-2, v3=attempt-3
+[PASS] T12 最终 artifact 指向正确(v3)  ->  approved.read()={'attempt': 'attempt-3'}
+
+[PASS] T13 第一次 run 失败(failed)  ->  run1.status=failed
+[PASS] T13 Workflow Run 可以恢复/读取历史  ->  saved=True; run_id 一致=True
+[PASS] T19 resume 后已成功 Step 标记 SKIPPED(不重跑)  ->  stepA2.status=SKIPPED
+[PASS] T19 失败 Step 被重新执行  ->  stepB2.status=FAILED; attempts=3
+[PASS] T13 历史产物未被删除/覆盖  ->  stepA.json exists=True
+
+[PASS] T17 StepA 的 artifact 不被删除  ->  stepA.json 内容一致=True
+[PASS] T17 StepB 重跑不覆盖旧版本(stepB.json 与 stepB_v2.json 并存)  ->  v1={'attempt': 1}; v2={'attempt': 2}
+[PASS] T17 StepA 在重跑中为 SKIPPED(未重新生成)  ->  stepA2.status=SKIPPED
+
+[PASS] T18 桥接到 core.WorkflowState  ->  type=WorkflowState; step=scenes_5
+[PASS] T18 全部尝试文件名保留  ->  attempts=['scenes_5.json', 'scenes_5_v2.json', 'scenes_5_v3.json']
+[PASS] T18 approved_output 指向最终版本  ->  approved=scenes_5_v3.json; status=passed
+
+[PASS] T15 V0.1 未发生任何修改(git diff 为空)  ->  git diff -- FilmAgent/ 空=True
+[PASS] T15 v0.1 commit 未变  ->  v0.1=344c0c6b7c48497be934957c29fcae029cca6752
+[PASS] T15 FilmAgent/ 无 M/D/R 记录  ->  dirty=无
+[PASS] T15 HEAD=v0.1  ->  HEAD=344c0c6b7c48497be934957c29fcae029cca6752
+
+================================================================
+测试结果：38/38 通过
+真实 LLM 调用 = 0 次（本阶段全部用 FakeStep / MockStep）

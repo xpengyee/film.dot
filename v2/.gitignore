@@ -1,0 +1,23 @@
+# ============ V0.2 运行时产物（阶段 5 清理） ============
+# 本文件只作用于 v2/ 内部（路径相对 v2/）。仓库根 .gitignore 不动，
+# 保证 V0.1 / 仓库根文件零改动（阶段 5 验收 T20）。
+
+# v2 项目数据与运行日志：运行时生成，绝不进版本库
+projects/
+logs/llm_calls.jsonl
+logs/**/llm_calls.jsonl
+
+# 各阶段测试的运行日志 / 临时产物
+# （run_tests.py 与 stage*_report.md/json 保留为验收证据，不忽略）
+logs/**/console.txt
+logs/**/real_console.txt
+logs/**/tmp_projects/
+logs/**/tmp_logs/
+logs/**/real_tmp/
+logs/**/project_*/
+logs/**/runs/
+logs/**/test_output_*
+
+# Python 运行时缓存（根 .gitignore 已覆盖，这里冗余自包含）
+__pycache__/
+*.py[cod]

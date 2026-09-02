@@ -1,0 +1,44 @@
+================================================================
+V0.2 阶段 2 —— LLM 调用层测试
+================================================================
+API base_url = https://api.deepseek.com
+默认模型     = deepseek-chat
+timeout      = 120.0s, max_retries = 2
+key 配置     = True（显示 'sk-****6509'）
+日志文件     = D:\AI\FilmAgent-main\v2\logs\llm_calls.jsonl
+
+[PASS] T1 配置读取(base_url/model)  ->  base_url=https://api.deepseek.com; default_model=deepseek-chat
+[PASS] T1 配置读取(key configured + 脱敏)  ->  key_configured=True; masked='sk-****6509'
+[PASS] T1 超时/重试可配置  ->  timeout=120.0s; max_retries=2
+[PASS] T2 最小真实 LLM 调用  ->  text='OK'; input=8 output=1 total=9; request_id=0a75c330...; duration=3922ms; retry_count=0
+[PASS] T3 messages 多条消息  ->  system+user 两条消息; text='OK'; total_tokens=15
+
+--- Token 日志 ---
+  (llm_calls.jsonl 当前累计 70 条)
+[PASS] T4 Token 日志(JSONL)  ->  命中 2 条真实调用日志; 文件=llm_calls.jsonl
+  样例: request_id=0a75c330... model=deepseek-chat in=8 out=1 total=9 dur=3922ms success=True
+
+--- 成本统计 ---
+[PASS] T5 成本统计(真实 usage)  ->  tokens(total=9) ≠ cost(3.3e-05 CNY)
+[PASS] T5 成本统计(无价格→None)  ->  pricing 缺失时 estimate_cost 返回 None
+[PASS] T5 成本统计(手工演算一致)  ->  1000入+500出 → 0.0075 CNY
+
+--- 异常处理 & 重试（mock，不浪费真实 API）---
+[PASS] T6 无效参数→LLMError  ->  抛 LLMRequestError（不可重试），而非裸 Traceback
+[PASS] T6 认证失败→LLMError  ->  抛 LLMAuthenticationError（不可重试）
+[PASS] T7 重试机制  ->  第3次才成功; 总尝试=3; retry_count=2; 日志 success=true
+[PASS] T8 失败重试上限  ->  总尝试=3(=max_retries+1，没无限重试); 最终抛 LLMTimeoutError; 日志 success=False retry_count=2
+
+--- 真实 LLM 调用统计 ---
+Real LLM calls   = 2
+Input tokens     = 22
+Output tokens    = 2
+Total tokens     = 24
+Estimated cost   = 8.4e-05 CNY (按高峰价保守估算)
+
+--- API Key 安全检查 ---
+[PASS] T9 API Key 不泄漏  ->  日志=True 控制台=True 异常=True; 只显示脱敏 'sk-****6509'
+
+================================================================
+测试结果：14/14 通过
+本阶段真实 API 调用次数见上方统计；其余测试均为 mock，不额外计费。

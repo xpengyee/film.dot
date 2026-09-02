@@ -1,0 +1,83 @@
+{
+  "stage": "stage2_llm_test",
+  "real_llm_calls": 2,
+  "input_tokens": 22,
+  "output_tokens": 2,
+  "total_tokens": 24,
+  "estimated_cost": 8.4e-05,
+  "currency": "CNY",
+  "total": 14,
+  "passed": 14,
+  "results": [
+    {
+      "name": "T1 配置读取(base_url/model)",
+      "ok": true,
+      "detail": "base_url=https://api.deepseek.com; default_model=deepseek-chat"
+    },
+    {
+      "name": "T1 配置读取(key configured + 脱敏)",
+      "ok": true,
+      "detail": "key_configured=True; masked='sk-****6509'"
+    },
+    {
+      "name": "T1 超时/重试可配置",
+      "ok": true,
+      "detail": "timeout=120.0s; max_retries=2"
+    },
+    {
+      "name": "T2 最小真实 LLM 调用",
+      "ok": true,
+      "detail": "text='OK'; input=8 output=1 total=9; request_id=0a75c330...; duration=3922ms; retry_count=0"
+    },
+    {
+      "name": "T3 messages 多条消息",
+      "ok": true,
+      "detail": "system+user 两条消息; text='OK'; total_tokens=15"
+    },
+    {
+      "name": "T4 Token 日志(JSONL)",
+      "ok": true,
+      "detail": "命中 2 条真实调用日志; 文件=llm_calls.jsonl"
+    },
+    {
+      "name": "T5 成本统计(真实 usage)",
+      "ok": true,
+      "detail": "tokens(total=9) ≠ cost(3.3e-05 CNY)"
+    },
+    {
+      "name": "T5 成本统计(无价格→None)",
+      "ok": true,
+      "detail": "pricing 缺失时 estimate_cost 返回 None"
+    },
+    {
+      "name": "T5 成本统计(手工演算一致)",
+      "ok": true,
+      "detail": "1000入+500出 → 0.0075 CNY"
+    },
+    {
+      "name": "T6 无效参数→LLMError",
+      "ok": true,
+      "detail": "抛 LLMRequestError（不可重试），而非裸 Traceback"
+    },
+    {
+      "name": "T6 认证失败→LLMError",
+      "ok": true,
+      "detail": "抛 LLMAuthenticationError（不可重试）"
+    },
+    {
+      "name": "T7 重试机制",
+      "ok": true,
+      "detail": "第3次才成功; 总尝试=3; retry_count=2; 日志 success=true"
+    },
+    {
+      "name": "T8 失败重试上限",
+      "ok": true,
+      "detail": "总尝试=3(=max_retries+1，没无限重试); 最终抛 LLMTimeoutError; 日志 success=False retry_count=2"
+    },
+    {
+      "name": "T9 API Key 不泄漏",
+      "ok": true,
+      "detail": "日志=True 控制台=True 异常=True; 只显示脱敏 'sk-****6509'"
+    }
+  ]
+}

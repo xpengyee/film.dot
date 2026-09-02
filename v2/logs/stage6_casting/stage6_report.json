@@ -1,0 +1,129 @@
+{
+  "stage": "stage6_casting",
+  "summary": "24/24 通过",
+  "real_llm_calls": 0,
+  "total_tokens": 0,
+  "estimated_cost": 0.0,
+  "results": [
+    {
+      "name": "T01 Casting Agent 可被正常初始化",
+      "ok": true,
+      "detail": "name=casting; known=['Mercy', 'Caleb', 'Ivy', 'Theo']"
+    },
+    {
+      "name": "T02 Casting Agent 正确声明 needs（且都已被注册）",
+      "ok": true,
+      "detail": "needs=['project_info', 'approved_facts', 'characters', 'world']; needs_review=True"
+    },
+    {
+      "name": "T03 ContextAssembler 能提供 Casting 所需上下文",
+      "ok": true,
+      "detail": "keys=['project_info', 'approved_facts', 'characters', 'world']; project_id=p6_ctx"
+    },
+    {
+      "name": "T04 Mock LLM 返回合法 Casting",
+      "ok": true,
+      "detail": "entries=[('Caleb', 'new'), ('Ivy', 'new')]; episode=1"
+    },
+    {
+      "name": "T05 合法 Casting 能通过 Validator",
+      "ok": true,
+      "detail": "errors=[]"
+    },
+    {
+      "name": "T06 非法 Casting 能被 Validator 拒绝",
+      "ok": true,
+      "detail": "错误码=['DUPLICATE_ROLE', 'MISSING_FIELD', 'UNKNOWN_CHARACTER', 'WRONG_TYPE']"
+    },
+    {
+      "name": "T07 非法输出进入 retry",
+      "ok": true,
+      "detail": "attempts=[(1, 'FAILED'), (2, 'SUCCESS')]; 最终=APPROVED"
+    },
+    {
+      "name": "T08 retry 不覆盖旧 Artifact",
+      "ok": true,
+      "detail": "files=['casting.json', 'casting_v2.json']; 旧版 age=None; 新版 age='35'; 内容不同=True"
+    },
+    {
+      "name": "T09 三次失败后 Workflow 正确停止",
+      "ok": true,
+      "detail": "run.status=failed; step.status=FAILED; attempts=3"
+    },
+    {
+      "name": "T10 已有角色可以复用",
+      "ok": true,
+      "detail": "Caleb 状态=existing; 带档案=False"
+    },
+    {
+      "name": "T11 新角色能够创建",
+      "ok": true,
+      "detail": "Nina 状态=new; 档案={'name': 'Nina', 'age': '29', 'gender': 'female', 'occupation': 'Journalist', 'personality traits': 'Curious, fearless', 'speaking style': 'Witty, direct'}"
+    },
+    {
+      "name": "T12 已有角色不会重复创建",
+      "ok": true,
+      "detail": "entries=[('Caleb', 'existing'), ('Nina', 'existing')]"
+    },
+    {
+      "name": "T13 candidate memory 不会自动进入 approved memory",
+      "ok": true,
+      "detail": "候选时=candidate; approved 清单（前）=[]; 人工审核后=approved; approved 清单（后）含该条=True"
+    },
+    {
+      "name": "T14 Review APPROVED 能继续",
+      "ok": true,
+      "detail": "casting=APPROVED; scene_plan=SUCCESS; run=success; review_id=review-e59b5c0ef5"
+    },
+    {
+      "name": "T15 Review APPROVED_WITH_EDIT 能产生新版本",
+      "ok": true,
+      "detail": "status=APPROVED_WITH_EDIT; approved=casting_v2.json; files=['casting.json', 'casting_v2.json']"
+    },
+    {
+      "name": "T16 Review REJECTED 能停止流程",
+      "ok": true,
+      "detail": "run=failed; casting=REJECTED; scene_plan 未执行=True"
+    },
+    {
+      "name": "T17 Workflow 可以 resume（跳过已成功 Step）",
+      "ok": true,
+      "detail": "run1=success; resume 后 casting=SKIPPED; LLM 调用保持 1 次"
+    },
+    {
+      "name": "T18 LLM 调用经过 LLMClient",
+      "ok": true,
+      "detail": "calls=1; model=deepseek-chat"
+    },
+    {
+      "name": "T19 token / cost 正确记录",
+      "ok": true,
+      "detail": "records=16; total=40; cost=0.00021"
+    },
+    {
+      "name": "T20 request_id 正确记录",
+      "ok": true,
+      "detail": "request_id=c0ac9f5f4e11...; 与日志一致=True"
+    },
+    {
+      "name": "T26 V0.1 完整性检查通过",
+      "ok": true,
+      "detail": "HEAD=344c0c6; v0.1=344c0c6; diff空=True; status='?? CLAUDE.md\\n?? v2/'"
+    },
+    {
+      "name": "R1 阶段 1 回归（19/19）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '19/19 通过'=True"
+    },
+    {
+      "name": "R2 阶段 3 回归（38/38）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '38/38 通过'=True"
+    },
+    {
+      "name": "R3 阶段 4 回归（25/25，含阶段2 mock 复验）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '25/25 通过'=True"
+    }
+  ]
+}

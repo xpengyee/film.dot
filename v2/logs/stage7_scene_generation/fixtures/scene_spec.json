@@ -1,0 +1,9 @@
+{
+  "scene_id": 1,
+  "episode": 1,
+  "location": "Apartment living room",
+  "characters": ["Caleb", "Ivy", "Theo"],
+  "time": "Evening",
+  "objective": "Theo, who has been estranged from the friend group for three years after a bitter fallout over a shared business venture, receives a surprise knock on his apartment door. It's Caleb and Ivy, who have come to invite him to a small reunion at their old hangout spot. The news that Mercy (the fourth friend) has been diagnosed with a serious illness stuns Theo.",
+  "constraints": "Use only the confirmed characters, this exact location, and the registered actions/shots. End with Theo reluctantly agreeing to come to the reunion - not for Caleb or Ivy, but for Mercy."
+}

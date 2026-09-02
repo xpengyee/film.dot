@@ -1,0 +1,203 @@
+{
+  "stage": "stage3_workflow_test",
+  "total": 38,
+  "passed": 38,
+  "real_llm_calls": 0,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "total_tokens": 0,
+  "estimated_cost": null,
+  "currency": null,
+  "results": [
+    {
+      "name": "T1 单 Step 成功(run.status=success)",
+      "ok": true,
+      "detail": "run.status=success"
+    },
+    {
+      "name": "T3 Step 状态正确(SUCCESS)",
+      "ok": true,
+      "detail": "stepA.status=SUCCESS"
+    },
+    {
+      "name": "T1 产出已落盘(approved_artifact)",
+      "ok": true,
+      "detail": "filename=stepA.json"
+    },
+    {
+      "name": "T1 落盘内容可读回",
+      "ok": true,
+      "detail": "read={'step': 'stepA', 'value': 'stepA-value'}"
+    },
+    {
+      "name": "T2 多 Step 顺序执行",
+      "ok": true,
+      "detail": "order=['stepA', 'stepB', 'stepC']; 全部=True"
+    },
+    {
+      "name": "T4 Step 输出正确传递(B 读到了 A 的产出)",
+      "ok": true,
+      "detail": "B.read={'from_upstream': {'step': 'stepA', 'value': 'stepA-value'}}"
+    },
+    {
+      "name": "T3 各 Step 状态正确",
+      "ok": true,
+      "detail": "['SUCCESS', 'SUCCESS', 'SUCCESS']"
+    },
+    {
+      "name": "T5 Step 失败能够被捕获(不崩)",
+      "ok": true,
+      "detail": "run.status=failed; stepB.status=FAILED"
+    },
+    {
+      "name": "T5 失败即停(下游不再执行)",
+      "ok": true,
+      "detail": "steps={'stepB', 'stepA'}"
+    },
+    {
+      "name": "T14 错误信息完整",
+      "ok": true,
+      "detail": "attempt1.error=StepError: 故意失败：run 阶段抛出"
+    },
+    {
+      "name": "T6 不可重试只尝试 1 次(不无限重试)",
+      "ok": true,
+      "detail": "max_attempts=3 但实际尝试 1 次"
+    },
+    {
+      "name": "T6 失败原因被记录",
+      "ok": true,
+      "detail": "attempt1.error=ArtifactError: 写入失败（不可重试）"
+    },
+    {
+      "name": "T7 可重试错误重试后成功",
+      "ok": true,
+      "detail": "stepY.status=SUCCESS"
+    },
+    {
+      "name": "T8 retry 次数正确(共 2 次尝试)",
+      "ok": true,
+      "detail": "attempts=['FAILED', 'SUCCESS']"
+    },
+    {
+      "name": "T8 第1次失败/第2次成功",
+      "ok": true,
+      "detail": "[FAILED, SUCCESS]"
+    },
+    {
+      "name": "T8 最终采用第2版(approved=stepY_v2.json)",
+      "ok": true,
+      "detail": "approved=stepY_v2.json"
+    },
+    {
+      "name": "T9 第一次失败 artifact 保留(stepY.json 存在)",
+      "ok": true,
+      "detail": "files=['stepY.json', 'stepY_v2.json']"
+    },
+    {
+      "name": "T10 第二次成功 artifact 保留(stepY_v2.json 存在)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16 三次尝试状态序列[FAIL,FAIL,SUCCESS]",
+      "ok": true,
+      "detail": "statuses=['FAILED', 'FAILED', 'SUCCESS']"
+    },
+    {
+      "name": "T16 最终 run 成功且批准 v3",
+      "ok": true,
+      "detail": "approved=scenes_5_v3.json"
+    },
+    {
+      "name": "T11 磁盘三份文件全部保留",
+      "ok": true,
+      "detail": "files=['scenes_5.json', 'scenes_5_v2.json', 'scenes_5_v3.json']"
+    },
+    {
+      "name": "T9/T10/T11 三份内容分别=attempt-1/2/3(不互相覆盖)",
+      "ok": true,
+      "detail": "v1=attempt-1, v2=attempt-2, v3=attempt-3"
+    },
+    {
+      "name": "T12 最终 artifact 指向正确(v3)",
+      "ok": true,
+      "detail": "approved.read()={'attempt': 'attempt-3'}"
+    },
+    {
+      "name": "T13 第一次 run 失败(failed)",
+      "ok": true,
+      "detail": "run1.status=failed"
+    },
+    {
+      "name": "T13 Workflow Run 可以恢复/读取历史",
+      "ok": true,
+      "detail": "saved=True; run_id 一致=True"
+    },
+    {
+      "name": "T19 resume 后已成功 Step 标记 SKIPPED(不重跑)",
+      "ok": true,
+      "detail": "stepA2.status=SKIPPED"
+    },
+    {
+      "name": "T19 失败 Step 被重新执行",
+      "ok": true,
+      "detail": "stepB2.status=FAILED; attempts=3"
+    },
+    {
+      "name": "T13 历史产物未被删除/覆盖",
+      "ok": true,
+      "detail": "stepA.json exists=True"
+    },
+    {
+      "name": "T17 StepA 的 artifact 不被删除",
+      "ok": true,
+      "detail": "stepA.json 内容一致=True"
+    },
+    {
+      "name": "T17 StepB 重跑不覆盖旧版本(stepB.json 与 stepB_v2.json 并存)",
+      "ok": true,
+      "detail": "v1={'attempt': 1}; v2={'attempt': 2}"
+    },
+    {
+      "name": "T17 StepA 在重跑中为 SKIPPED(未重新生成)",
+      "ok": true,
+      "detail": "stepA2.status=SKIPPED"
+    },
+    {
+      "name": "T18 桥接到 core.WorkflowState",
+      "ok": true,
+      "detail": "type=WorkflowState; step=scenes_5"
+    },
+    {
+      "name": "T18 全部尝试文件名保留",
+      "ok": true,
+      "detail": "attempts=['scenes_5.json', 'scenes_5_v2.json', 'scenes_5_v3.json']"
+    },
+    {
+      "name": "T18 approved_output 指向最终版本",
+      "ok": true,
+      "detail": "approved=scenes_5_v3.json; status=passed"
+    },
+    {
+      "name": "T15 V0.1 未发生任何修改(git diff 为空)",
+      "ok": true,
+      "detail": "git diff -- FilmAgent/ 空=True"
+    },
+    {
+      "name": "T15 v0.1 commit 未变",
+      "ok": true,
+      "detail": "v0.1=344c0c6b7c48497be934957c29fcae029cca6752"
+    },
+    {
+      "name": "T15 FilmAgent/ 无 M/D/R 记录",
+      "ok": true,
+      "detail": "dirty=无"
+    },
+    {
+      "name": "T15 HEAD=v0.1",
+      "ok": true,
+      "detail": "HEAD=344c0c6b7c48497be934957c29fcae029cca6752"
+    }
+  ]
+}

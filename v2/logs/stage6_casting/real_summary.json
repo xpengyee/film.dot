@@ -1,0 +1,94 @@
+{
+  "stage": "stage6_casting",
+  "suite": "run_real_casting",
+  "real_llm_calls": 3,
+  "success": [
+    {
+      "timestamp": "2026-09-01T21:21:39+0800",
+      "request_id": "d001b5f5fa634e6395c906195de492e1",
+      "step": "casting",
+      "agent": "casting",
+      "model": "deepseek-chat",
+      "input_tokens": 411,
+      "output_tokens": 484,
+      "total_tokens": 895,
+      "estimated_cost": 0.005589,
+      "currency": "CNY",
+      "duration_ms": 6844,
+      "success": true,
+      "retry_count": 0,
+      "error": null,
+      "prompt_hash": "95ddd00970f9f6d3aa281f51fcac3a45453d30feef61060b1a132d3416d0bdea",
+      "prompt_length": 1729,
+      "message_count": 2
+    },
+    {
+      "timestamp": "2026-09-01T21:21:42+0800",
+      "request_id": "fd9869e218f247dc8926e10e7c14b49f",
+      "step": "casting",
+      "agent": "casting",
+      "model": "deepseek-chat",
+      "input_tokens": 426,
+      "output_tokens": 176,
+      "total_tokens": 602,
+      "estimated_cost": 0.002862,
+      "currency": "CNY",
+      "duration_ms": 2280,
+      "success": true,
+      "retry_count": 0,
+      "error": null,
+      "prompt_hash": "79f428cd9edb1467af94112a9a1acbfd93361d764fc2cb13db4d89c34042c10c",
+      "prompt_length": 1764,
+      "message_count": 2
+    },
+    {
+      "timestamp": "2026-09-01T21:21:44+0800",
+      "request_id": "274f8a7626674eda9f0ff8eb955e720c",
+      "step": "casting",
+      "agent": "casting",
+      "model": "deepseek-chat",
+      "input_tokens": 426,
+      "output_tokens": 176,
+      "total_tokens": 602,
+      "estimated_cost": 0.0017484,
+      "currency": "CNY",
+      "duration_ms": 1905,
+      "success": true,
+      "retry_count": 0,
+      "error": null,
+      "prompt_hash": "79f428cd9edb1467af94112a9a1acbfd93361d764fc2cb13db4d89c34042c10c",
+      "prompt_length": 1764,
+      "message_count": 2
+    }
+  ],
+  "total_tokens": 2099,
+  "estimated_cost": 0.0101994,
+  "results": [
+    {
+      "name": "T21 真实调用（第一集）：全为新角色且通过 Validator",
+      "ok": true,
+      "detail": "episode=1; entries=[('Maya', 'new'), ('Liam', 'new'), ('Sofia', 'new'), ('Noah', 'new')]; validator errors=[]"
+    },
+    {
+      "name": "T22 真实调用（第二集）：老角色复用、不重复建档",
+      "ok": true,
+      "detail": "entries=[('Mercy', 'existing'), ('Caleb', 'existing'), ('Ivy', 'existing'), ('Theo', 'existing')]; 已知角色均复用=True; new 均带档案=True; validator errors=[]"
+    },
+    {
+      "name": "T23 真实 token / cost / request_id 正确记录",
+      "ok": true,
+      "detail": "成功记录数=2; 最近一条 total_tokens=602, cost=0.002862, request_id=fd9869e218f2..., step/agent=casting/casting"
+    },
+    {
+      "name": "T24 真实环境失败路径：能记录错误且不崩溃",
+      "ok": true,
+      "detail": "抛异常=True; 失败记录数=1; retry_count=1; error=LLMConnectionError: simulated network failure (T24)"
+    },
+    {
+      "name": "T25 完整 Workflow 真实走一遍（落盘 + Review approved）",
+      "ok": true,
+      "detail": "run=success; casting=APPROVED; files=['casting.json']; approved=casting.json; review_id=review-ef2d5baef6"
+    }
+  ],
+  "masked_api_key": "sk-****6509"
+}

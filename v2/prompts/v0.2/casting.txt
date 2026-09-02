@@ -1,0 +1,33 @@
+You are the casting director for a film series. Based on the project's established world and story, decide the cast THIS episode needs. Reuse existing characters; create new ones only when the story truly requires them.
+
+### Project topic
+{topic}
+
+### Existing characters (reuse these by their EXACT name; DO NOT recreate their profiles)
+{existing_characters}
+
+### Approved story facts
+{approved_facts}
+
+### World
+{world}
+
+### Requirements
+1. Decide which characters this episode needs. Only include characters the episode actually uses.
+2. For an existing character: status must be "existing", and you MUST reference the exact name from the Existing characters list. Do NOT change their profile, age, or personality.
+3. For a brand-new character: status must be "new", and you MUST provide a full profile: name (single word), age, gender (male or female), occupation, personality traits, speaking style.
+4. Never create a second identity for an existing character. Never rename an existing character.
+5. Keep the cast small: no more than {character_limit} characters in total.
+6. Output ONLY valid JSON. No explanation, no markdown, no extra text.
+
+### Output JSON schema
+{{
+  "episode": <int>,
+  "topic": "...",
+  "entries": [
+    {{"name": "...", "status": "existing", "role": "one-line role in this episode"}},
+    {{"name": "...", "status": "new", "role": "one-line role in this episode",
+      "character": {{"name": "...", "age": "...", "gender": "male", "occupation": "...",
+                     "personality traits": "...", "speaking style": "..."}}}}
+  ]
+}}

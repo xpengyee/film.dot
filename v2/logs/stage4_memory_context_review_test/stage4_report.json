@@ -1,0 +1,138 @@
+{
+  "stage": "stage4_memory_context_review_test",
+  "real_llm_calls": 0,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "total_tokens": 0,
+  "estimated_cost": 0.0,
+  "currency": "CNY",
+  "total": 25,
+  "passed": 25,
+  "results": [
+    {
+      "name": "T1 Memory 创建项目",
+      "ok": true,
+      "detail": "memory 目录=logs\\stage4_memory_context_review_test\\tmp_projects\\p_mem_create\\memory"
+    },
+    {
+      "name": "T2 写入 candidate fact",
+      "ok": true,
+      "detail": "fact_id=fact-7ee7bf935e; status=candidate; source=memory_writer"
+    },
+    {
+      "name": "T3 candidate 不直接成为 approved",
+      "ok": true,
+      "detail": "get_approved_facts() 空（candidate 未确认前绝不进 approved）"
+    },
+    {
+      "name": "T4 approve 后可以读取",
+      "ok": true,
+      "detail": "approved[0]='Theo left the apartment'; reviewer=human; category=plot"
+    },
+    {
+      "name": "T5 reject 后不会进入 approved context",
+      "ok": true,
+      "detail": "approved=['应该保留的事实']; rejected=['应该拒绝的事实']"
+    },
+    {
+      "name": "T6 project A/B Memory 隔离",
+      "ok": true,
+      "detail": "A approved=['A 的独家事实']; B approved=['B 的独家事实']"
+    },
+    {
+      "name": "T7 Memory 持久化后重新读取一致",
+      "ok": true,
+      "detail": "重读 facts=1 characters=1 world.city=Shanghai history=1 revision=5"
+    },
+    {
+      "name": "T8 Step 可以声明 needs",
+      "ok": true,
+      "detail": "needs=['approved_facts', 'characters']"
+    },
+    {
+      "name": "T8 默认 Step 无 needs（兼容阶段 3）",
+      "ok": true,
+      "detail": "不声明 needs 时为空列表，向后兼容"
+    },
+    {
+      "name": "T9 ContextAssembler 根据 needs 组装 Context",
+      "ok": true,
+      "detail": "keys=['approved_facts', 'characters']; approved_facts[0]={'fact_id': 'fact-38da511119', 'content': 'Theo left the apartment', 'category': 'general'}; characters[0]={'name': 'Theo', 'occupation': 'architect'}"
+    },
+    {
+      "name": "T10 不需要的数据不会进入 Context",
+      "ok": true,
+      "detail": "lines 只带 ['approved_facts']; scene 带 ['approved_facts', 'locations']（含 locations）"
+    },
+    {
+      "name": "T11 Context 包含来源信息",
+      "ok": true,
+      "detail": "source=memory type=approved_fact id=p_ctx_trace version=rev2 char_count=71"
+    },
+    {
+      "name": "T12 approved review",
+      "ok": true,
+      "detail": "status=APPROVED; original=scene_1.json; edited=None"
+    },
+    {
+      "name": "T13 approved_with_edit review（产生新版本）",
+      "ok": true,
+      "detail": "status=APPROVED_WITH_EDIT; 原始=scene_1.json; 新产物=scene_1_v2.json"
+    },
+    {
+      "name": "T14 rejected review",
+      "ok": true,
+      "detail": "status=REJECTED; reason='剧情不合设定'"
+    },
+    {
+      "name": "T15 人工修改不会覆盖原始 artifact",
+      "ok": true,
+      "detail": "原始文件内容={'content': '原始版本'}（未变）; 新产物内容={'content': '编辑后'}; 文件并存=[scene_1.json, scene_1_v2.json]"
+    },
+    {
+      "name": "T16 review 状态进入 Workflow(approved)",
+      "ok": true,
+      "detail": "step.status=APPROVED; run.status=success; review_id=review-0ec6ce8aee; review记录=APPROVED"
+    },
+    {
+      "name": "T16 review 状态进入 Workflow(approved_with_edit)",
+      "ok": true,
+      "detail": "step.status=APPROVED_WITH_EDIT; approved=scene_1_v2.json 内容={'content': '人工改后'}"
+    },
+    {
+      "name": "T17 approved 后 Workflow 继续到下一 Step",
+      "ok": true,
+      "detail": "run.status=success; casting=APPROVED; scene_plan=SUCCESS"
+    },
+    {
+      "name": "T18 rejected 后 Workflow 正确停止",
+      "ok": true,
+      "detail": "run.status=failed; casting=REJECTED; scene_plan 未执行=True"
+    },
+    {
+      "name": "T16 needs_review 但未配置 handler",
+      "ok": true,
+      "detail": "明确报错：RetryError"
+    },
+    {
+      "name": "T19 阶段 3 原有 38/38 测试继续通过",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '38/38 通过'=True"
+    },
+    {
+      "name": "T20 V0.1 仍然完全没有修改",
+      "ok": true,
+      "detail": "HEAD=344c0c6; v0.1=344c0c6; diff空=True; status='?? CLAUDE.md\\n?? v2/'"
+    },
+    {
+      "name": "R1 阶段 1 回归（19/19）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '19/19 通过'=True"
+    },
+    {
+      "name": "R2 阶段 2 回归（纯 mock，0 真实调用）",
+      "ok": true,
+      "detail": "复验 7 项断言全 PASS: ['T1 配置读取(base_url/model)', 'T1 配置读取(key configured + 脱敏)', 'T1 超时/重试可配置', 'T6 无效参数→LLMError', 'T6 认证失败→LLMError', 'T7 重试机制', 'T8 失败重试上限']"
+    }
+  ]
+}
