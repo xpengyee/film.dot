@@ -465,27 +465,33 @@ def test_regression_stage3():
 
 
 def test_v01_unchanged():
+    # 阶段 7 基线封存后 HEAD 已从 v0.1 演进到 v0.2-stage7，工作区改动 v2/ 是正常阶段
+    # 工作状态。"V0.1 冻结"的真实不变量 = v0.1 commit 未动 + FilmAgent/ 无改动。
     git_checks = [
-        ["git", "rev-parse", "HEAD"],
         ["git", "rev-parse", "v0.1^{commit}"],
+        ["git", "rev-parse", "v0.2-stage7^{commit}"],
         ["git", "diff", "--", "FilmAgent/"],
         ["git", "status", "--short"],
     ]
-    head = subprocess.run(git_checks[0], capture_output=True, text=True,
-                          cwd=str(V2_ROOT.parent)).stdout.strip()
-    v01 = subprocess.run(git_checks[1], capture_output=True, text=True,
+    v01 = subprocess.run(git_checks[0], capture_output=True, text=True,
+                         cwd=str(V2_ROOT.parent)).stdout.strip()
+    tag = subprocess.run(git_checks[1], capture_output=True, text=True,
                          cwd=str(V2_ROOT.parent)).stdout.strip()
     diff = subprocess.run(git_checks[2], capture_output=True, text=True,
                           cwd=str(V2_ROOT.parent)).stdout.strip()
     status = subprocess.run(git_checks[3], capture_output=True, text=True,
                             cwd=str(V2_ROOT.parent)).stdout.strip()
-    ok = head == "344c0c6b7c48497be934957c29fcae029cca6752" \
-        and v01 == "344c0c6b7c48497be934957c29fcae029cca6752" \
+    dirty_v01 = [
+        ln for ln in status.splitlines()
+        if ln.strip().startswith(("M ", "D ", "R ", "A ")) and "FilmAgent/" in ln
+    ]
+    ok = v01 == "344c0c6b7c48497be934957c29fcae029cca6752" \
+        and bool(tag) \
         and diff == "" \
-        and all(not line.startswith(" M ") and not line.startswith("M ")
-                for line in status.splitlines() if line.strip())
+        and not dirty_v01
     check("T20 V0.1 仍然完全没有修改", ok,
-          f"HEAD={head[:7]}; v0.1={v01[:7]}; diff空={diff == ''}; status={status!r}")
+          f"v0.1={v01[:7]}; baseline-tag={tag[:7] or '缺失'}; "
+          f"diff空={diff == ''}; FilmAgent dirty={dirty_v01 or '无'}")
 
 
 # ---------------------------------------------------------------------------

@@ -442,16 +442,23 @@ def test_v01_untouched():
     head = subprocess.run(
         ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"],
         capture_output=True, text=True)
+    tag = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "rev-parse", "v0.2-stage7^{commit}"],
+        capture_output=True, text=True)
     ok_diff = diff.returncode == 0 and diff.stdout.strip() == ""
     ok_rev = rev.stdout.strip() == "344c0c6b7c48497be934957c29fcae029cca6752"
-    ok_head = head.stdout.strip() == rev.stdout.strip()
+    # 阶段 7 基线封存后 HEAD 已不是 v0.1（v0.2-stage7 = 300aae44 基线 commit）。
+    # "V0.1 冻结"的真实不变量 = v0.1 commit 未动（ok_rev）+ FilmAgent/ 无改动
+    # （ok_diff/ok_clean）；本检查改为确认 v0.2-stage7 基线里程碑已落库。
+    ok_head = tag.returncode == 0 and bool(tag.stdout.strip())
     dirty_v01 = [ln for ln in status.stdout.splitlines() if ln.startswith(("M ", "D ", "R ", "A ")) and "FilmAgent/" in ln]
     ok_clean = not dirty_v01
     check("T15 V0.1 未发生任何修改(git diff 为空)", ok_diff,
           f"git diff -- FilmAgent/ 空={ok_diff}")
     check("T15 v0.1 commit 未变", ok_rev, f"v0.1={rev.stdout.strip()}")
     check("T15 FilmAgent/ 无 M/D/R 记录", ok_clean, f"dirty={dirty_v01 or '无'}")
-    check("T15 HEAD=v0.1", ok_head, f"HEAD={head.stdout.strip()}")
+    check("T15 v0.2-stage7 基线 tag 已建立(HEAD 演进自此基线)", ok_head,
+          f"tag={tag.stdout.strip()}")
 
 
 # ===========================================================================

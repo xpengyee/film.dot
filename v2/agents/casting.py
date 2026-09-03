@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 V0.2 阶段 6 —— Casting Agent（v2/agents/casting.py）
+（阶段 8 清理：继承 agents/base.py 的 LLMAgent / LLMStep 公共骨架，行为不变）
 
 职责（阶段 6 开工指令 §三 / §四 / §五）：
     根据项目已提供的剧情上下文 / 已确认事实 / 角色信息，生成本集需要的 Casting
@@ -14,31 +15,29 @@ V0.2 阶段 6 —— Casting Agent（v2/agents/casting.py）
 
 跨集决策（阶段 1 锁定，指令 §七）：
     老角色直接复用（引用已有 name，不新建档案）；只给新角色建档。
-    已有角色绝不重复创建（Episode1 Alice->character_001，Episode2 仍是 001）。
     existing / new 的判定是确定性规则：
         名字命中已有角色 -> existing（忽略 LLM 自创档案，防改档）
         否则             -> new   （必须带完整档案）
     CastingValidator 再兜底检查：existing 引用合法、new 不重名、字段齐全。
 
 结构：
-    CastingAgent  业务核心：组装消息 -> 调 LLM -> 解析 -> 规范化 -> CastingResult
-    CastingStep   Workflow Step 壳：声明 needs/needs_review，接进引擎跑
+    CastingAgent  业务核心（继承 LLMAgent）：组装消息 -> chat_json -> 规范化 -> CastingResult
+    CastingStep   Workflow Step 壳（继承 LLMStep）：声明 needs/needs_review，接进引擎跑
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from config import V2_ROOT
 from core.models import Character, CastingEntry, CastingResult
 from core.validator import CastingValidator, format_errors
 from workflow.errors import StepError
-from workflow.models import StepOutput, now_iso
-from workflow.step import Step
+from workflow.models import now_iso
+
+from agents.base import LLMAgent, LLMStep
 
 
-class CastingAgent:
+class CastingAgent(LLMAgent):
     """Casting 业务核心：根据组装好的 Context 提出本集 Casting 结果。"""
 
     name = "casting"
@@ -60,10 +59,9 @@ class CastingAgent:
         :param prompt_path:       V0.2 Casting Prompt 路径（缺省 v2/prompts/v0.2/casting.txt）
         :param character_limit:   本集最多主要角色数（沿用 V0.1 的 4）
         """
-        self.llm_client = llm_client
+        super().__init__(llm_client, prompt_name="casting", prompt_path=prompt_path)
         self.known_characters: List[str] = [str(x) for x in (known_characters or [])]
         self.validator = validator or CastingValidator(self.known_characters)
-        self.prompt_path = Path(prompt_path) if prompt_path else V2_ROOT / "prompts" / "v0.2" / "casting.txt"
         self.character_limit = character_limit
 
     # ---------------- 主入口 ----------------
@@ -79,15 +77,10 @@ class CastingAgent:
         facts = self._facts_from(context)
         world = self._world_from(context)
 
-        messages = [
-            {"role": "system", "content": self._system_prompt()},
-            {"role": "user", "content": self._user_payload(topic, existing, facts, world)},
-        ]
-        response = self.llm_client.chat(messages, step="casting", agent=self.name)
-
-        raw = self._parse_json(response.text)
-        if not isinstance(raw, dict):
-            raise StepError(f"Casting LLM 输出不是 JSON 对象: {type(raw).__name__}")
+        raw = self.chat_json(
+            step="casting",
+            user_payload=self._user_payload(topic, existing, facts, world),
+        )
         entries = self._normalize(raw)
         result = CastingResult(
             project_id=context.project_id,
@@ -99,16 +92,10 @@ class CastingAgent:
         return result
 
     # ---------------- Prompt 构造 ----------------
-    def _system_prompt(self) -> str:
-        try:
-            return self.prompt_path.read_text(encoding="utf-8")
-        except OSError as exc:  # pragma: no cover - 防御：prompt 缺失应明确报错
-            raise StepError(f"读取 Casting Prompt 失败 {self.prompt_path}: {exc}") from exc
-
     def _user_payload(self, topic: str, existing: List[str], facts: List[dict], world: dict) -> str:
         existing_text = ", ".join(existing) if existing else "(none yet - this is the first episode)"
-        facts_text = json.dumps(facts, ensure_ascii=False, indent=2) if facts else "(none)"
-        world_text = json.dumps(world, ensure_ascii=False, indent=2) if world else "(empty)"
+        facts_text = _json_dumps(facts, fallback="(none)")
+        world_text = _json_dumps(world, fallback="(empty)")
         return (
             f"topic: {topic}\n\n"
             f"existing_characters: {existing_text}\n\n"
@@ -152,22 +139,7 @@ class CastingAgent:
             return {}
         return dict(item.data or {})
 
-    # ---------------- 解析与规范化 ----------------
-    def _parse_json(self, text: str) -> Any:
-        text = (text or "").strip()
-        # 最小容错：LLM 偶尔用 ```json ... ``` 包裹输出，剥掉代码围栏
-        if text.startswith("```"):
-            lines = text.splitlines()
-            if lines and lines[0].strip().startswith("```"):
-                lines = lines[1:]
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            text = "\n".join(lines).strip()
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError as exc:
-            raise StepError(f"Casting LLM 输出不是合法 JSON: {exc}") from exc
-
+    # ---------------- 规范化 ----------------
     def _normalize(self, raw: dict) -> List[CastingEntry]:
         """把 LLM 的原始 entries 规范成 CastingEntry 列表。
 
@@ -202,7 +174,7 @@ class CastingAgent:
         return entries
 
 
-class CastingStep(Step):
+class CastingStep(LLMStep):
     """把 CastingAgent 接入 Workflow 引擎的 Step 壳。
 
     run()      把调度层放入 inputs 的 AssembledContext 交给 CastingAgent，
@@ -216,27 +188,20 @@ class CastingStep(Step):
     needs = CastingAgent.needs
     needs_review = True
 
-    def __init__(self, agent: Optional[CastingAgent] = None, *, step_id: Optional[str] = None,
+    def __init__(self, agent=None, *, step_id: Optional[str] = None,
                  needs_review: Optional[bool] = None):
         super().__init__(
-            step_id=step_id or self.step_id,
+            agent=agent,
+            step_id=step_id,
             name=self.name,
             needs=list(self.needs),
-            needs_review=needs_review if needs_review is not None else self.needs_review,
+            needs_review=needs_review,
         )
-        if agent is None:
-            raise ValueError("CastingStep 必须注入 CastingAgent")
-        self.agent = agent
 
     def run(self, context):
-        assembled = context.inputs.get("assembled_context")
-        if assembled is None:
-            raise StepError(
-                "调度层必须先调用 ContextAssembler.assemble()，并把结果放进 "
-                "WorkflowContext.inputs['assembled_context']"
-            )
+        assembled = self.assembled_context(context)
         result = self.agent.run(assembled)
-        return StepOutput(
+        return self.make_output(
             data=result.to_dict(),
             artifact_name="casting",
             metadata={"episode": result.episode, "agent": self.name},
@@ -246,6 +211,14 @@ class CastingStep(Step):
         """确定性校验：CastingValidator 的错误转成字符串列表（引擎按此决定重试）。"""
         errors = self.agent.validator.validate_dict(data)
         return [str(e) for e in errors]
+
+
+def _json_dumps(obj, *, fallback: str = "(none)") -> str:
+    """把可序列化对象转成 JSON 文本；空对象返回 fallback（保持与历史 prompt 一致）。"""
+    import json
+    if not obj:
+        return fallback
+    return json.dumps(obj, ensure_ascii=False, indent=2)
 
 
 __all__ = ["CastingAgent", "CastingStep"]

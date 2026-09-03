@@ -17,7 +17,7 @@
     {
       "name": "T2 写入 candidate fact",
       "ok": true,
-      "detail": "fact_id=fact-7ee7bf935e; status=candidate; source=memory_writer"
+      "detail": "fact_id=fact-8526fd32b2; status=candidate; source=memory_writer"
     },
     {
       "name": "T3 candidate 不直接成为 approved",
@@ -57,7 +57,7 @@
     {
       "name": "T9 ContextAssembler 根据 needs 组装 Context",
       "ok": true,
-      "detail": "keys=['approved_facts', 'characters']; approved_facts[0]={'fact_id': 'fact-38da511119', 'content': 'Theo left the apartment', 'category': 'general'}; characters[0]={'name': 'Theo', 'occupation': 'architect'}"
+      "detail": "keys=['approved_facts', 'characters']; approved_facts[0]={'fact_id': 'fact-7cf9aebaca', 'content': 'Theo left the apartment', 'category': 'general'}; characters[0]={'name': 'Theo', 'occupation': 'architect'}"
     },
     {
       "name": "T10 不需要的数据不会进入 Context",
@@ -92,7 +92,7 @@
     {
       "name": "T16 review 状态进入 Workflow(approved)",
       "ok": true,
-      "detail": "step.status=APPROVED; run.status=success; review_id=review-0ec6ce8aee; review记录=APPROVED"
+      "detail": "step.status=APPROVED; run.status=success; review_id=review-b491663d37; review记录=APPROVED"
     },
     {
       "name": "T16 review 状态进入 Workflow(approved_with_edit)",
@@ -122,7 +122,7 @@
     {
       "name": "T20 V0.1 仍然完全没有修改",
       "ok": true,
-      "detail": "HEAD=344c0c6; v0.1=344c0c6; diff空=True; status='?? CLAUDE.md\\n?? v2/'"
+      "detail": "v0.1=344c0c6; baseline-tag=300aae4; diff空=True; FilmAgent dirty=无"
     },
     {
       "name": "R1 阶段 1 回归（19/19）",

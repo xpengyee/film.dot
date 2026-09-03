@@ -1,0 +1,144 @@
+{
+  "stage": "stage8_canonical_schema",
+  "summary": "27/27 通过",
+  "real_llm_calls": 0,
+  "total_tokens": 0,
+  "estimated_cost": 0.0,
+  "results": [
+    {
+      "name": "T01 受控词表与 §十三 完全一致",
+      "ok": true,
+      "detail": "sizes=['WS', 'MS', 'MCU', 'CU', 'ECU']; angles=['eye_level', 'high_angle', 'low_angle', 'overhead']; movements=['static', 'pan', 'tilt', 'dolly', 'tracking', 'zoom', 'handheld']; comps=['single', 'two_shot', 'over_the_shoulder', 'group']; kinds=['dialogue', 'move', 'general']; statuses=['planned', 'approved', 'rendered']; assets=9类"
+    },
+    {
+      "name": "T02 Canonical 序列化不残留 V0.1 容器键",
+      "ok": true,
+      "detail": "泄露键=无; shot 键含 shot_type/dialogue=True"
+    },
+    {
+      "name": "T03 CameraPlan / ShotAsset 默认值与 dict 往返",
+      "ok": true,
+      "detail": "cam往返=True; cam空dict→None=True; 默认空串=True; asset往返=True; asset空→None=True; 默认空串=True"
+    },
+    {
+      "name": "T04 Shot 全字段 dict 往返稳定",
+      "ok": true,
+      "detail": "serialize→deserialize→serialize 稳定=True; actions=2; positioning=2; assets=2; duration=3.5; has_content=True"
+    },
+    {
+      "name": "T05 Beat dict 往返稳定 + shots 保序",
+      "ok": true,
+      "detail": "稳定=True; shot顺序=[3, 4]"
+    },
+    {
+      "name": "T06 Storyboard dict 往返稳定 + flatten_shots 保序",
+      "ok": true,
+      "detail": "稳定=True; flatten shot_id顺序=[1, 2]; beat顺序=[1, 2]"
+    },
+    {
+      "name": "T07 §十九 fixture 往返一致 + 内容全覆盖 + 0 错误",
+      "ok": true,
+      "detail": "往返稳定=True; beats=[2, 2]; shot_id=[1, 2, 3, 4]; beat_id=[1, 1, 2, 2]; 内容覆盖=True; 校验错误=0"
+    },
+    {
+      "name": "T08 Project→Scene→Beat→Shot→Asset 全链路 0 错误 + 无损回 Scene",
+      "ok": true,
+      "detail": "shots=2; 媒体资产类型=['audio', 'image', 'video']; 校验错误=0; scene无损=True"
+    },
+    {
+      "name": "T09 合法 Storyboard 对象与 dict 两条路径均 0 错误",
+      "ok": true,
+      "detail": "对象错误=0; validate_dict错误=0"
+    },
+    {
+      "name": "T10 ShotValidator 拒绝非法词表/镜头名/地点/角色/动作/状态/缺字段",
+      "ok": true,
+      "detail": "错误码=['INVALID_ACTION', 'INVALID_ASSET_KIND', 'INVALID_CAMERA_ANGLE', 'INVALID_CAMERA_MOVEMENT', 'INVALID_COMPOSITION', 'INVALID_LOCATION', 'INVALID_SHOT_SIZE', 'INVALID_SHOT_TYPE', 'INVALID_STATE', 'MISSING_FIELD', 'UNKNOWN_CHARACTER']; move缺move→['MISSING_FIELD']"
+    },
+    {
+      "name": "T11 BeatValidator 拒绝 Beat 内重复 shot_id + beat_id 错配",
+      "ok": true,
+      "detail": "错误码=['DUPLICATE_SHOT_ID', 'INVALID_STRUCTURE']"
+    },
+    {
+      "name": "T12 StoryboardValidator 拒绝全局重复 shot/beat + Scene 错配 + 非 Beat",
+      "ok": true,
+      "detail": "错误码=['DUPLICATE_BEAT_ID', 'DUPLICATE_SHOT_ID', 'INVALID_STRUCTURE', 'WRONG_TYPE']"
+    },
+    {
+      "name": "T13 AssetValidator 拒绝非法 kind / 空 ref / 未知引用",
+      "ok": true,
+      "detail": "错误码=['INVALID_ACTION', 'INVALID_ASSET_KIND', 'INVALID_LOCATION', 'MISSING_FIELD', 'UNKNOWN_CHARACTER']"
+    },
+    {
+      "name": "T13b validate_dict 能拒绝结构损坏/非法地点的 dict",
+      "ok": true,
+      "detail": "beats非list→['WRONG_TYPE']; 非法地点→['INVALID_LOCATION']; 空→MISSING_FIELD"
+    },
+    {
+      "name": "T14 真实 script/0.json → Canonical → V0.1-compatible 完全无损",
+      "ok": true,
+      "detail": "场景=3; storyboard=3; shots(行)=49; 深等=True"
+    },
+    {
+      "name": "T15 真实剧本逐行 → Shot → 行 无损（含 move 行）",
+      "ok": true,
+      "detail": "行数=49; 全部往返相等=True; 样本=[('dialogue', 'Long Shot 2', 'WS'), ('dialogue', 'Close Shot', 'CU'), ('dialogue', 'Mid Shot', 'MS')]"
+    },
+    {
+      "name": "T16 general 视觉镜头明确报错不静默丢内容 + 镜头名双向映射",
+      "ok": true,
+      "detail": "general→ValueError=True; 反向=True; base_name推断=True"
+    },
+    {
+      "name": "T17 业务 Agent/Step 正确继承公共骨架 + needs 精确 + 空 llm_client 可构造",
+      "ok": true,
+      "detail": "CastingAgent.needs=['project_info', 'approved_facts', 'characters', 'world']; SceneGenerationAgent.needs=['project_info', 'approved_facts', 'characters', 'locations', 'actions', 'shots']; prompt存在=True"
+    },
+    {
+      "name": "T18 _parse_json 剥围栏/非法JSON报错 + chat_json 端到端(mock)",
+      "ok": true,
+      "detail": "解析围栏=True; chat→dict=True; mock调用=1; 非dict→StepError=True"
+    },
+    {
+      "name": "T19 LLMStep 接线：缺 agent 报错 / context 缺失报错 / make_output 产出",
+      "ok": true,
+      "detail": "缺agent→ValueError=True; 缺assembled→StepError=True; StepOutput=True"
+    },
+    {
+      "name": "T20 V0.1 完整性检查通过",
+      "ok": true,
+      "detail": "v0.1=344c0c6; baseline-tag=300aae4; diff空=True; FilmAgent dirty=无"
+    },
+    {
+      "name": "T21 阶段 8 源码无 LLM/网络 import + 测试无真实调用",
+      "ok": true,
+      "detail": "可疑import=无; 本次真实 LLM 调用=0（全程 mock / fixture）"
+    },
+    {
+      "name": "R1 阶段 1 回归（19/19）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '19/19 通过'=True"
+    },
+    {
+      "name": "R2 阶段 3 回归（38/38）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '38/38 通过'=True"
+    },
+    {
+      "name": "R3 阶段 4 回归（25/25，含阶段2 mock 复验）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '25/25 通过'=True"
+    },
+    {
+      "name": "R4 阶段 6 回归（24/24，mock）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '24/24 通过'=True"
+    },
+    {
+      "name": "R5 阶段 7 回归（29/29，mock）",
+      "ok": true,
+      "detail": "returncode=0; 输出含 '29/29 通过'=True"
+    }
+  ]
+}

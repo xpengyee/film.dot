@@ -50,7 +50,7 @@ run 日志目录  = D:\AI\FilmAgent-main\v2\logs\stage3_workflow_test\runs
 [PASS] T15 V0.1 未发生任何修改(git diff 为空)  ->  git diff -- FilmAgent/ 空=True
 [PASS] T15 v0.1 commit 未变  ->  v0.1=344c0c6b7c48497be934957c29fcae029cca6752
 [PASS] T15 FilmAgent/ 无 M/D/R 记录  ->  dirty=无
-[PASS] T15 HEAD=v0.1  ->  HEAD=344c0c6b7c48497be934957c29fcae029cca6752
+[PASS] T15 v0.2-stage7 基线 tag 已建立(HEAD 演进自此基线)  ->  tag=300aae44ad1d704219822efcf55249d1d59ad118
 
 ================================================================
 测试结果：38/38 通过

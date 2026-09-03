@@ -73,7 +73,7 @@
     {
       "name": "T14 Review APPROVED 能继续",
       "ok": true,
-      "detail": "casting=APPROVED; scene_plan=SUCCESS; run=success; review_id=review-e59b5c0ef5"
+      "detail": "casting=APPROVED; scene_plan=SUCCESS; run=success; review_id=review-82163f486f"
     },
     {
       "name": "T15 Review APPROVED_WITH_EDIT 能产生新版本",
@@ -103,12 +103,12 @@
     {
       "name": "T20 request_id 正确记录",
       "ok": true,
-      "detail": "request_id=c0ac9f5f4e11...; 与日志一致=True"
+      "detail": "request_id=d8cc4b9a03cf...; 与日志一致=True"
     },
     {
       "name": "T26 V0.1 完整性检查通过",
       "ok": true,
-      "detail": "HEAD=344c0c6; v0.1=344c0c6; diff空=True; status='?? CLAUDE.md\\n?? v2/'"
+      "detail": "v0.1=344c0c6; baseline-tag=300aae4; diff空=True; FilmAgent dirty=无"
     },
     {
       "name": "R1 阶段 1 回归（19/19）",

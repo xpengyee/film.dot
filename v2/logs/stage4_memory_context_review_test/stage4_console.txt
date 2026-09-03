@@ -3,7 +3,7 @@ V0.2 阶段 4 —— Memory + ContextAssembler + 人工审核 测试
 ====================================================================
 --- Memory（T1~T7）---
 [PASS] T1 Memory 创建项目  ->  memory 目录=logs\stage4_memory_context_review_test\tmp_projects\p_mem_create\memory
-[PASS] T2 写入 candidate fact  ->  fact_id=fact-7ee7bf935e; status=candidate; source=memory_writer
+[PASS] T2 写入 candidate fact  ->  fact_id=fact-8526fd32b2; status=candidate; source=memory_writer
 [PASS] T3 candidate 不直接成为 approved  ->  get_approved_facts() 空（candidate 未确认前绝不进 approved）
 [PASS] T4 approve 后可以读取  ->  approved[0]='Theo left the apartment'; reviewer=human; category=plot
 [PASS] T5 reject 后不会进入 approved context  ->  approved=['应该保留的事实']; rejected=['应该拒绝的事实']
@@ -12,7 +12,7 @@ V0.2 阶段 4 —— Memory + ContextAssembler + 人工审核 测试
 --- ContextAssembler（T8~T11）---
 [PASS] T8 Step 可以声明 needs  ->  needs=['approved_facts', 'characters']
 [PASS] T8 默认 Step 无 needs（兼容阶段 3）  ->  不声明 needs 时为空列表，向后兼容
-[PASS] T9 ContextAssembler 根据 needs 组装 Context  ->  keys=['approved_facts', 'characters']; approved_facts[0]={'fact_id': 'fact-38da511119', 'content': 'Theo left the apartment', 'category': 'general'}; characters[0]={'name': 'Theo', 'occupation': 'architect'}
+[PASS] T9 ContextAssembler 根据 needs 组装 Context  ->  keys=['approved_facts', 'characters']; approved_facts[0]={'fact_id': 'fact-7cf9aebaca', 'content': 'Theo left the apartment', 'category': 'general'}; characters[0]={'name': 'Theo', 'occupation': 'architect'}
 [PASS] T10 不需要的数据不会进入 Context  ->  lines 只带 ['approved_facts']; scene 带 ['approved_facts', 'locations']（含 locations）
 [PASS] T11 Context 包含来源信息  ->  source=memory type=approved_fact id=p_ctx_trace version=rev2 char_count=71
 --- Review（T12~T15）---
@@ -21,14 +21,14 @@ V0.2 阶段 4 —— Memory + ContextAssembler + 人工审核 测试
 [PASS] T14 rejected review  ->  status=REJECTED; reason='剧情不合设定'
 [PASS] T15 人工修改不会覆盖原始 artifact  ->  原始文件内容={'content': '原始版本'}（未变）; 新产物内容={'content': '编辑后'}; 文件并存=[scene_1.json, scene_1_v2.json]
 --- Workflow + Review 集成（T16~T18）---
-[PASS] T16 review 状态进入 Workflow(approved)  ->  step.status=APPROVED; run.status=success; review_id=review-0ec6ce8aee; review记录=APPROVED
+[PASS] T16 review 状态进入 Workflow(approved)  ->  step.status=APPROVED; run.status=success; review_id=review-b491663d37; review记录=APPROVED
 [PASS] T16 review 状态进入 Workflow(approved_with_edit)  ->  step.status=APPROVED_WITH_EDIT; approved=scene_1_v2.json 内容={'content': '人工改后'}
 [PASS] T17 approved 后 Workflow 继续到下一 Step  ->  run.status=success; casting=APPROVED; scene_plan=SUCCESS
 [PASS] T18 rejected 后 Workflow 正确停止  ->  run.status=failed; casting=REJECTED; scene_plan 未执行=True
 [PASS] T16 needs_review 但未配置 handler  ->  明确报错：RetryError
 --- 回归（T19/T20 + R1/R2）---
 [PASS] T19 阶段 3 原有 38/38 测试继续通过  ->  returncode=0; 输出含 '38/38 通过'=True
-[PASS] T20 V0.1 仍然完全没有修改  ->  HEAD=344c0c6; v0.1=344c0c6; diff空=True; status='?? CLAUDE.md\n?? v2/'
+[PASS] T20 V0.1 仍然完全没有修改  ->  v0.1=344c0c6; baseline-tag=300aae4; diff空=True; FilmAgent dirty=无
 [PASS] R1 阶段 1 回归（19/19）  ->  returncode=0; 输出含 '19/19 通过'=True
 [PASS] R2 阶段 2 回归（纯 mock，0 真实调用）  ->  复验 7 项断言全 PASS: ['T1 配置读取(base_url/model)', 'T1 配置读取(key configured + 脱敏)', 'T1 超时/重试可配置', 'T6 无效参数→LLMError', 'T6 认证失败→LLMError', 'T7 重试机制', 'T8 失败重试上限']
 

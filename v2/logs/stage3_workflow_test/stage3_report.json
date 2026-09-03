@@ -195,9 +195,9 @@
       "detail": "dirty=无"
     },
     {
-      "name": "T15 HEAD=v0.1",
+      "name": "T15 v0.2-stage7 基线 tag 已建立(HEAD 演进自此基线)",
       "ok": true,
-      "detail": "HEAD=344c0c6b7c48497be934957c29fcae029cca6752"
+      "detail": "tag=300aae44ad1d704219822efcf55249d1d59ad118"
     }
   ]
 }

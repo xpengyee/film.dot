@@ -93,7 +93,7 @@
     {
       "name": "T13 Review APPROVED 能继续（下游步骤执行）",
       "ok": true,
-      "detail": "run=success; scene=APPROVED; review=review-4825794b58; downstream=SUCCESS"
+      "detail": "run=success; scene=APPROVED; review=review-712c924a11; downstream=SUCCESS"
     },
     {
       "name": "T14 Review APPROVED_WITH_EDIT 写新版本不覆盖原始文件",
@@ -128,7 +128,7 @@
     {
       "name": "T26 V0.1 完整性检查通过",
       "ok": true,
-      "detail": "HEAD=344c0c6; v0.1=344c0c6; diff空=True; status='?? CLAUDE.md\\n?? v2/'"
+      "detail": "v0.1=344c0c6; baseline-tag=300aae4; diff空=True; FilmAgent dirty=无"
     },
     {
       "name": "R1 阶段 1 回归（19/19）",
