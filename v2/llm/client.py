@@ -133,6 +133,10 @@ class LLMClient:
         self.retry_backoff_seconds = retry_backoff_seconds
         self.logger = logger or TokenLogger(Path("."))
         self._transport: TransportFn = transport or self._default_transport
+        # Stage 9 增补：
+        self._uses_default_transport = transport is None   # 是否在用内置 openai 传输
+        # 结构化输出透传开关。默认 False（"后端未确认支持时不送"），Provider 可按需打开。
+        self.structured_supported = False
 
     # ---------------- 对外主接口 ----------------
     def chat(
@@ -145,6 +149,7 @@ class LLMClient:
         timeout: Optional[float] = None,
         step: str = "",
         agent: str = "",
+        structured: Optional[dict] = None,
     ) -> LLMResponse:
         """发起一次 chat 调用。
 
@@ -156,6 +161,11 @@ class LLMClient:
 
         step / agent 只是调用上下文标签（进日志用），
         LLMClient 本身不关心业务含义。
+
+        structured（Stage 9 增补）：可选 dict，表示"尽力让后端返回结构化"。
+            默认 None，行为与之前完全一致。仅当 structured_supported=True 且用的是
+            内置 openai 传输时，才会把 structured 作为 response_format 透传给后端；
+            否则（未接线 / 注入自定义 transport）静默忽略、不报错（见 _invoke）。
         """
         request_id = new_request_id()
         started = time.monotonic()
@@ -167,7 +177,8 @@ class LLMClient:
 
         while attempts < max_attempts:
             try:
-                text, usage = self._transport(messages, eff_model, temperature, max_tokens, eff_timeout)
+                text, usage = self._invoke(messages, eff_model, temperature, max_tokens,
+                                           eff_timeout, structured)
                 duration_ms = int((time.monotonic() - started) * 1000)
                 cost = estimate_cost(usage, _pricing_for(eff_model))
                 self._log(request_id, step, agent, eff_model, usage, cost, duration_ms,
@@ -223,6 +234,23 @@ class LLMClient:
         )
         self.logger.record(rec)
 
+    def _invoke(self, messages: List[dict], model: str,
+                temperature: Optional[float], max_tokens: Optional[int],
+                timeout: float, structured: Optional[dict]) -> tuple[str, TokenUsage]:
+        """统一调用点（Stage 9）：决定 structured 走哪条传输路径。
+
+        规则（stage9_plan §12 三层边界 + §6.1）：
+            - structured 只在"确认后端支持（structured_supported）且在用内置 openai
+              传输"时才真正透传（作为 response_format）；
+            - 否则走常规 transport 调用；structured 被静默忽略、不报错
+              —— 这是"后端未接入时忽略，绝不让 Provider 越权替业务校验"。
+        """
+        if (structured is not None and self.structured_supported
+                and self._uses_default_transport):
+            return self._default_transport(messages, model, temperature, max_tokens,
+                                           timeout, structured=structured)
+        return self._transport(messages, model, temperature, max_tokens, timeout)
+
     # ---------------- 真实 transport ----------------
     def _default_transport(
         self,
@@ -231,11 +259,15 @@ class LLMClient:
         temperature: Optional[float],
         max_tokens: Optional[int],
         timeout: float,
+        structured: Optional[dict] = None,
     ) -> tuple[str, TokenUsage]:
         """真正调用 DeepSeek（OpenAI 兼容接口）。
 
         把 openai 库的异常统一转成 V0.2 自己的 LLMError 子类，
         绝不让 SDK 异常泄漏给上层业务。
+
+        structured（Stage 9 增补，默认 None）：非 None 时作为 response_format 透传，
+        请求后端 json 模式（是否生效取决于后端实现）。
         """
         import openai  # 延迟导入：只用真实调用时才需要 openai 库
 
@@ -245,6 +277,8 @@ class LLMClient:
             kwargs["temperature"] = temperature
         if max_tokens is not None:
             kwargs["max_tokens"] = max_tokens
+        if structured is not None:
+            kwargs["response_format"] = structured
 
         try:
             completion = client.chat.completions.create(**kwargs)

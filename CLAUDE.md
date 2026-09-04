@@ -9,15 +9,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`FilmAgent/`（V0.1）**：冻结基准，是一套已跑通的串行流水线（casting → scenes_plan → lines_generate → … → clean_script），依赖 DeepSeek（`LLMCaller.py` + `Prompt/`）。**任何情况下不得修改。**
 - **`v2/`（V0.2）**：全新重写的基础设施——可测试、可扩展、有人工审核的多智能体框架，按阶段推进，每阶段由独立的"开工指令"文件（位于 `D:\AI\FilmAgent\`）控制。
 
-**当前进度：阶段 8 已完成并封存**——Canonical Schema（镜头级数据模型）落地：数据结构升级为
-`Project → Scene → Beat → Shot → Asset`（`v2/core/shot.py`，含受控镜头词表），V0.1 通过 `v2/core/adapter.py`
-双向无损转换，纯代码校验器新增 4 个（Asset/Shot/Beat/Storyboard），Agent 公共骨架抽到 `v2/agents/base.py`
-（`LLMAgent`/`LLMStep`，Casting/SceneGeneration 已改继承、行为不变）。阶段 8 测试 27/27、历史回归
-19/19+38/38+25/25+24/24+29/29 全绿、真实 LLM 调用 0 次。
+**当前进度：阶段 8（Canonical Schema）与阶段 9（Provider Architecture）均已完成并封存。**
+阶段 8：Canonical Schema 落地——`Project → Scene → Beat → Shot → Asset`（`v2/core/shot.py`），
+V0.1 经 `v2/core/adapter.py` 双向无损转换，新增 4 个校验器，Agent 公共骨架抽到 `v2/agents/base.py`。
+阶段 9：Multi-Modal **Provider Architecture** —— 把"用哪个模型、怎么调用"从业务代码剥离进
+`v2/llm/providers/`：Text/Vision/Multimodal/Embedding 接口族 + Mock 四件套 + Registry/Factory +
+Router 真入口 + Config Provider 注册表（deepseek/bailian/local…）+ Bailian 文本实现位。
+职责划分：Agent 说"要什么"、Router 说"用哪家哪个模型"、Provider 执行调用并做瞬时错误重试与
+usage 上报、Model 只是 Config 里的数据。阶段 9 测试 26/26 + 历史回归全绿 + 真实 API 0 次 + ¥0.00。
 协作规范与会话管理体系已落地（COMPLETE）：A/B/C/D = 不同 Claude Code 会话/终端
 （见下文「协作与会话管理（长期规则）」），项目状态与交接沉淀到 `v2/docs/PROJECT_STATUS.md`
 与 `v2/docs/HANDOFF.md`。
-**Stage 9 尚未开始**：应在本会话结束后，由全新 Claude Code 会话 + 下一份开工指令启动。
+**Stage 10 尚未开始**：应在本会话结束后，由全新 Claude Code 会话 + 下一份**正式开工指令**启动
+（Stage 10 尚未制定开工方案前不要开工，也不要虚构其实现细节）。
 
 ## 铁律（违反即失控）
 
@@ -73,7 +77,10 @@ python v2/logs/stage6_casting/run_real_casting.py               # T21~T25，最�
 python v2/logs/stage7_scene_generation/run_tests.py             # 29/29（T01~T19+T26+回归），mock，0 次真实调用
 python v2/logs/stage7_scene_generation/run_real_scene_generation.py  # T21~T25，最小真实 DeepSeek 调用（计费）
 python v2/logs/stage8_canonical_schema/run_tests.py                 # 27/27（词表/模型/校验/适配器/骨架），mock，0 次真实调用
+python v2/logs/stage9_provider/run_tests.py                         # 26/26（Provider 接口族/Mock/工厂/Router/Config/E2E + 内嵌回归），mock，0 次真实调用
 ```
+
+- **日常回归策略**：跑 stage9 套件即可（其内嵌子进程已覆盖 stage1/3/4/6/7/8）；也可单独逐套跑 stage4 + stage6 + stage7 + stage8 核对。
 
 - **日常回归策略**：跑 stage4 套件（内含 stage1/2(mock)/3 复验）+ stage6 套件 + stage7 套件即可覆盖全部。
 - **真实 LLM 调用只走独立脚本**（stage2 完整套件、stage6 的 `run_real_casting.py`），日常回归 0 计费。
@@ -96,7 +103,7 @@ core → (llm | memory | context) → workflow → review → agents
 | 层 | 位置 | 职责 |
 |---|---|---|
 | core | `v2/core/` | `models.py`（Scene/Character/Line/…/CastingResult）、`shot.py`（阶段8 Canonical：Shot/Beat/Storyboard/ShotAsset/受控词表）、`adapter.py`（阶段8：V0.1↔Canonical 无损转换）、`validator.py`、`io.py`（JSON 读写 + V0.1 字段容错）、`assets.py`、`token_log.py`（JSONL，不记 key 不记 prompt 正文） |
-| llm | `v2/llm/client.py` | `LLMClient.chat(messages, step=, agent=)` → `LLMResponse`；统一错误家族（`LLMError` 子类带 `retryable`）、重试、自动写 token log；transport 可注入（测试用 mock） |
+| llm | `v2/llm/` | `client.py`（`LLMClient.chat` → `LLMResponse`；`LLMError` 错误家族带 `retryable`、重试、token log；transport 可注入）+ `providers/`（阶段 9：`Provider` 接口族 Text/Vision/Multimodal/Embedding + Mock 四件套 + `OpenAICompatibleTextProvider` + `BailianTextProvider` + `registry.create_provider` 工厂）+ `router.py`（`get_route` → `ProviderRoute`、`get_provider` 产出实例） |
 | memory | `v2/memory/store.py` | `MemoryStore(project_id)`；facts 三态 candidate/approved/rejected、characters、world、history |
 | context | `v2/context/assembler.py` | `ContextAssembler` 按 Step 声明的 `needs` 组装 `AssembledContext`（每条带来源信息） |
 | workflow | `v2/workflow/` | `Step`（run/validate）、`WorkflowEngine.run(project_id, workflow_id, inputs, max_attempts, resume_from)`、`ArtifactStore`（版本化落盘）、状态机 |
@@ -139,18 +146,20 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
 
 ## 当前状态与下一步
 
-- 当前阶段：协作规范与会话管理体系建设 **COMPLETE**（本次文档沉淀）；V0.2 Stage 8 **PASS + 已封存**；
-  V0.2 Stage 9 **NOT STARTED**。当前没有任何进行中的业务代码任务。
+- 当前阶段：V0.2 Stage 8（Canonical Schema）与 Stage 9（Provider Architecture）均 **PASS + 已封存**；
+  V0.2 Stage 10 **NOT STARTED**。当前没有任何进行中的业务代码任务。
 - 权威状态文档：`v2/docs/PROJECT_STATUS.md`；给新会话的交接文档：`v2/docs/HANDOFF.md`。
-- Git：版本锚点 `v0.1` = `344c0c6…`、`v0.2-stage7` = `300aae4…`、`v0.2-stage8` = `abf8e88…`
-  三个 tag 均未移动；`FilmAgent/` 0 diff。最近 commit 见 `git log`（不在此写死 HEAD）。
-- 已交付：阶段 0~8 全部完成并封存。阶段 8 = Canonical Schema（`core/shot.py` + `core/adapter.py`
-  + `agents/base.py` + Asset/Shot/Beat/Storyboard 4 个新校验器），测试 27/27，真实 LLM 0 次。
+- Git：版本锚点 `v0.1` = `344c0c6…`、`v0.2-stage7` = `300aae4…`、`v0.2-stage8` = `abf8e88…`、
+  `v0.2-stage9` = 本次 Stage 9 commit；四个 tag 均未移动；`FilmAgent/` 0 diff。
+  最近 commit 见 `git log`（不在此写死 HEAD）。
+- 已交付：阶段 0~9 全部完成并封存。阶段 9 = Provider Architecture（`v2/llm/providers/` 接口族 +
+  Mock 四件套 + Registry/Factory + Router 真入口 + Config Provider 注册表 + Bailian 文本实现位），
+  测试 26/26 + 历史回归全绿，真实 LLM 0 次。
 - 已知遗留：openai 库需按上文安装；人工审核目前是程序化 decision 模拟，交互式审核界面未做；
-  `v2/README.md` 过时（仍写"尚未实现任何业务 Agent"）；Storyboard/Image/Video/VLM Agent 未实现；
-  image/video/audio 资产仅 Schema 可表达。
-- 下一步：**关闭本会话，开全新 Claude Code 会话进入 Stage 9**（先读 CLAUDE.md →
-  `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md` → 最近 Stage Report → Git 状态 →
-  Stage 9 相关代码；开工指令在 `D:\AI\FilmAgent\`）。路线图方向：StoryboardAgent /
-  接入第三个业务 Agent（Dialogue / Shot / Script）→ Project 生命周期 → 第一条完整业务链
+  Storyboard/Image/Video/VLM Agent 未实现；image/video/audio 仅 Schema + Provider 预留接口可表达，
+  尚无真实生成；`structured=` 真实后端支持未验证（需人工批准的最小真实冒烟）。
+- 下一步：**关闭本会话，等待 Stage 10 正式开工指令后开全新 Claude Code 会话**（先读 CLAUDE.md →
+  `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md` → 最近 Stage Report（`stage9_report.md`）→
+  Git 状态 → Stage 10 相关代码；Stage 10 开工指令在 `D:\AI\FilmAgent\`，目前尚未生成）。
+  路线图方向：StoryboardAgent / 接入下一个业务 Agent → Project 生命周期 → 第一条完整业务链
   → 第一集真实生成 → V0.2.0-alpha。

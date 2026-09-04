@@ -3,8 +3,10 @@
 ## 1. V0.2 是什么
 
 V0.2 是 FilmAgent 的**重构版基础设施**，目标是把 V0.1 的"串行脚本流水线"改造成一个
-可测试、可扩展、有人工审核的多智能体框架。目前处于"基础设施"阶段（阶段 0~5），
-**尚未实现任何业务 Agent**。
+可测试、可扩展、有人工审核的多智能体框架。已推进到 **Stage 9（Provider Architecture）**：
+业务 Agent（Casting / SceneGeneration）与 Canonical Schema 已在 Stage 6/7/8 落地，
+Provider 层在 Stage 9 落地。本文档是早期基础设施说明，**权威状态以
+`v2/docs/PROJECT_STATUS.md` 为准**。
 
 当前 V0.2 提供一条可运行的基础闭环：
 
@@ -34,11 +36,15 @@ v2/
 │   └── token_log.py   Token/Cost 记录（JSONL，不记 key、不记 prompt 正文）
 ├── llm/               LLM 调用层（依赖 core）
 │   ├── client.py      LLMClient：统一调用 / 错误家族 / 重试 / token 日志
-│   └── router.py      任务类型 → 模型 的路由
+│   ├── router.py      Router：任务 → Provider/模型 的路由（Stage 9 起返回 ProviderRoute）
+│   └── providers/     Provider 层（Stage 9）：Text/Vision/Multimodal/Embedding 接口族
+│                      + Mock 四件套 + OpenAICompatibleTextProvider + BailianTextProvider
+│                      + Registry 工厂（create_provider / get_default_provider）
 ├── memory/            记忆层：facts(candidate/approved/rejected) / characters / world / history
 ├── context/           上下文组装层：声明式 needs + provider 注册表
 ├── workflow/          工作流引擎：step / artifact / engine
 ├── review/            人工审核层：submit / approve / approve_with_edit / reject
+├── agents/            业务 Agent（Stage 6/7/8 起）：casting / scene_generation / base 骨架
 ├── assets/locations/  V0.1 迁移的资产（只读）
 ├── prompts/v0.1/      V0.1 迁移的 Prompt（只读）
 ├── projects/          运行时项目数据（已被 .gitignore 忽略）
@@ -48,7 +54,7 @@ v2/
 模块依赖方向（只允许向上依赖，禁止反向）：
 
 ```text
-core → (llm | memory | context) → workflow → review →（未来）agents
+core → (llm | memory | context) → workflow → review → agents
 ```
 
 ## 4. 如何安装依赖
@@ -207,30 +213,44 @@ duration_ms / success 等字段。日志**不记 key、不记 prompt 正文**（
 
 ## 14. 当前已经完成哪些阶段
 
+已完成 **Stage 0–9**，每阶段测试套件与验收报告保留在 `v2/logs/stageN_*/`。
+**权威阶段状态以 `v2/docs/PROJECT_STATUS.md` 为准**。概要：
+
 | 阶段 | 内容 | 测试 |
 |---|---|---|
 | 0 | 基础目录 + V0.1 资产/Prompt 只读迁移 | IO 验证 4 组 |
 | 1 | 数据模型 + Validator + Assets | 19/19 |
-| 2 | LLMClient + Token/Cost | 14/14（含 4 次真实调用验证） |
+| 2 | LLMClient + Token/Cost | 14/14（含真实调用验证，已封存） |
 | 3 | Workflow + Artifact | 38/38 |
 | 4 | Memory + Context + Review | 25/25 |
-| 5 | 清理 + 固化 + 文档 | 全回归（本阶段） |
+| 5 | 清理 + 固化 + 文档 | 全回归 |
+| 6 | 第一个业务 Agent：CastingAgent | 24/24 |
+| 7 | 第二个业务 Agent：Scene / Script Generation | 29/29 |
+| 8 | Canonical Schema（Shot/Beat/Storyboard/Asset + Adapter） | 27/27 |
+| 9 | Multi-Modal Provider Architecture（`v2/llm/providers/`） | 26/26 |
 
 ## 15. 当前尚未完成哪些能力
 
-- **业务 Agent**：casting / scene / dialogue / shot / memory_writer 均未实现
-- **第一集真实生成**：未做
+- 更多业务 Agent：dialogue / shot / storyboard / memory_writer 等未实现
+  （casting / scene_generation 已实现）
+- **Image / Video / Audio 真实生成**：未做（Provider 仅预留接口，尚未接真实生成）
+- **本地模型**（Ollama / vLLM / 权重）：未下载 / 未部署 / 未接入（仅 Config 档预留）
+- **`structured=` 真实后端支持**：未验证（contract 已就位；需人工批准的最小真实冒烟）
 - **summary 摘要层**：只预留概念，LLM 生成摘要未实现
 - **真实异步人工审核流程**：用同步 handler 演示闭环，生产"暂停等人工"流程待接
 - **UI / 数据库 / 生产部署**：均未做
 
 ## 16. 下一阶段是什么
 
-阶段 6+：**业务 Agent 接入**。按路线图顺序：
+```text
+Stage 10：NOT STARTED（等待下一份正式开工指令；进入前先读 v2/docs/HANDOFF.md）
+```
+
+路线图方向：
 
 ```text
-业务 Agent 接入 → Project 生命周期 → 第一条完整业务链 → 第一集真实生成
-→ 多集连续生成 → 全面测试 → V0.2.0-alpha → 稳定化 → V0.2.0
+StoryboardAgent / 接入下一个业务 Agent → Project 生命周期 → 第一条完整业务链
+→ 第一集真实生成 → V0.2.0-alpha → 稳定化 → V0.2.0
 ```
 
 `V0.2.0-alpha` 是重要版本留存点，代表"基础设施完整 + 至少一条真实业务链跑通 +

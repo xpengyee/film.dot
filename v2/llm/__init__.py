@@ -14,10 +14,27 @@ from llm.client import (
     LLMInternalError, LLMRequestError, LLMAuthenticationError,
     LLMResponse, LLMClient,
 )
-from llm.router import Router
+from llm.router import Router, ProviderRoute
+from llm.providers import (
+    Provider, TextProvider, VisionProvider, MultimodalProvider, EmbeddingProvider,
+    ImageGenerationProvider, VideoGenerationProvider, AudioProvider,
+    ProviderResult, EmbeddingResult,
+    MockTextProvider, MockVisionProvider, MockMultimodalProvider, MockEmbeddingProvider,
+    OpenAICompatibleTextProvider, BailianTextProvider,
+    create_provider, get_default_provider,
+)
 
 __all__ = [
     "LLMError", "LLMTimeoutError", "LLMConnectionError", "LLMRateLimitError",
     "LLMInternalError", "LLMRequestError", "LLMAuthenticationError",
-    "LLMResponse", "LLMClient", "Router",
+    "LLMResponse", "LLMClient", "Router", "ProviderRoute",
+    # ---- Provider 抽象与实现（Stage 9） ----
+    "Provider", "TextProvider", "VisionProvider", "MultimodalProvider",
+    "EmbeddingProvider",
+    "ImageGenerationProvider", "VideoGenerationProvider", "AudioProvider",
+    "ProviderResult", "EmbeddingResult",
+    "MockTextProvider", "MockVisionProvider", "MockMultimodalProvider",
+    "MockEmbeddingProvider",
+    "OpenAICompatibleTextProvider", "BailianTextProvider",
+    "create_provider", "get_default_provider",
 ]

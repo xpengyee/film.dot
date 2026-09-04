@@ -45,6 +45,9 @@ from config import V2_ROOT
 from workflow.errors import StepError
 from workflow.models import StepOutput
 from workflow.step import Step
+# 注意：这里不 import TextProvider 符号——Stage8 冻结测试要求 agents/base.py
+# 不出现 llm.* 导入；且本文件顶部有 `from __future__ import annotations`，
+# 字符串注解在运行时不会求值，因此 `"TextProvider"` 直接作为类型标注即可。
 
 
 class LLMAgent:
@@ -63,14 +66,17 @@ class LLMAgent:
 
     def __init__(
         self,
-        llm_client,
+        llm_client: Optional["TextProvider"] = None,
         *,
         prompt_name: str = "",
         prompt_path: Optional[Path] = None,
     ):
         """
-        :param llm_client:   LLMClient 实例（统一错误 / 重试 / token 日志）；
-                            允许为 None（仅初始化 / 探 needs 用，不实际调 LLM）
+        :param llm_client:   TextProvider（抽象文本 Provider，Stage 9 起统一形状）。
+                             传入 LLMClient 也完全兼容——LLMClient 本身就是
+                             "OpenAI 兼容文本执行器"，天然满足 TextProvider 的
+                             chat(messages, step=, agent=) -> {text, usage} 形状。
+                             允许为 None（仅初始化 / 探 needs 用，不实际调 LLM）。
         :param prompt_name:  V0.2 Prompt 文件名（v2/prompts/v0.2/<prompt_name>.txt）
         :param prompt_path:  显式 prompt 路径；给了就优先用（覆盖 prompt_name）
         """

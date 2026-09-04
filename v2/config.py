@@ -106,6 +106,112 @@ def get_pricing(model: str) -> Optional[dict]:
     return PRICING.get(model)
 
 
+# ---------------------------------------------------------------------------
+# Provider 配置注册表（Stage 9 加法；不改动上面任何既有导出）
+# ---------------------------------------------------------------------------
+# 目标（stage9_plan §13）：给 Config 增加"供应商/Provider"维度，接百炼或本地模型时
+# 不用在 DeepSeek 的命名空间里硬塞第二套 URL / key / 价格。
+#
+# 结构约定：
+#     "kind"          模态+协议标签（text/vision/embedding…），Router 按它选队列
+#     "vendor"        供应商标签（deepseek/bailian/local…），Router 按它精确选实例
+#     "base_url"/"default_model"  是"同一实现类的不同配置"，不是写死进业务代码
+#     "api_key_env"   环境变量名（key 绝不硬编码；见 load_provider_api_key）
+#     "pricing"       成本走既有 flat PRICING 键；None = 未登记价格（cost 计 null）
+#
+# 重要：这里登记的都是"真实端点/厂商档"。mock_* 不需要登记（factory 按需合成）。
+# default_model 留空的（bailian/local）表示"真实调用前由用户在 Config 填"，不硬编码。
+FILMAGENT_PROVIDER = "FILMAGENT_PROVIDER"          # 环境开关：mock|deepseek|bailian|local
+_SUPPORTED_PROVIDERS = ("mock", "deepseek", "bailian", "local")
+
+# 供应商 -> API key 环境变量名（空 = 该供应商通常无 key）
+PROVIDER_ENV_API_KEYS = {
+    "mock": "",
+    "deepseek": ENV_API_KEY_NAME,
+    "bailian": "BAILIAN_API_KEY",
+    "local": "",
+}
+
+PROVIDERS: dict = {
+    # DeepSeek：与既有 API_BASE_URL / DEFAULT_MODEL 同源（历史 DeepSeek 计费原样保留）
+    "deepseek_text": {
+        "kind": "text", "vendor": "deepseek",
+        "base_url": API_BASE_URL,
+        "default_model": DEFAULT_MODEL,
+        "api_key_env": ENV_API_KEY_NAME,
+        "pricing": "deepseek-chat",
+    },
+    # 百炼 DashScope（OpenAI 兼容模式）。真实调用前请在 Config 填 default_model。
+    "bailian_text": {
+        "kind": "text", "vendor": "bailian",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "default_model": "",              # 用户 Config 填（如 qwen-plus / qwen-max / …）
+        "api_key_env": "BAILIAN_API_KEY",
+        "pricing": None,                  # 未登记价格 -> cost=null（不以 DeepSeek 价冒充）
+    },
+    # 本地模型（vLLM/Ollama/llama.cpp 普遍兼容 OpenAI /v1/chat/completions）：
+    # 未来 LocalTextProvider 大概率不是新类，而是本档配置（stage9_plan §10）。
+    "local_text": {
+        "kind": "text", "vendor": "local",
+        "base_url": "http://127.0.0.1:8000/v1",   # vLLM 示例地址；真实部署按需改
+        "default_model": "",              # 由部署决定，Config 填
+        "api_key_env": "",
+        "pricing": None,                  # 本地通常不计费 -> cost=null
+    },
+    # 视觉 / 向量：Stage 9 只立"接口位 + Config 槽位"，不实现真实调用（见工厂报错）。
+    "bailian_vision": {
+        "kind": "vision", "vendor": "bailian",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "default_model": "", "api_key_env": "BAILIAN_API_KEY", "pricing": None,
+    },
+    "bailian_embedding": {
+        "kind": "embedding", "vendor": "bailian",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "default_model": "", "api_key_env": "BAILIAN_API_KEY", "pricing": None,
+    },
+}
+
+
+def get_provider_config(name: str) -> dict:
+    """取某 Provider 配置档的拷贝（防调用方误改常量）。查不到明确报错。"""
+    if name not in PROVIDERS:
+        raise KeyError(
+            f"未登记的 Provider 配置档: {name!r}。现有: {sorted(PROVIDERS)}"
+        )
+    return dict(PROVIDERS[name])
+
+
+def default_text_vendor() -> str:
+    """默认文本供应商：环境变量 FILMAGENT_PROVIDER 优先，缺省 mock（0 API）。
+
+    非法取值明确报错（宁可不跑，也不要悄悄退回 mock 造成"以为真调了"的错觉）。
+    """
+    token = os.environ.get(FILMAGENT_PROVIDER, "").strip().lower()
+    if not token:
+        return "mock"
+    if token not in _SUPPORTED_PROVIDERS:
+        raise ValueError(
+            f"FILMAGENT_PROVIDER 取值非法: {token!r}"
+            f"（支持 {list(_SUPPORTED_PROVIDERS)}）"
+        )
+    return token
+
+
+def load_provider_api_key(vendor: str) -> str:
+    """按供应商读 API key：环境变量优先；deepseek 兼容回退到 V0.1 api_key.txt。
+
+    安全：只读不写、绝不打印 key；空串 = 未配置（真实调用将以认证失败收场）。
+    """
+    env = PROVIDER_ENV_API_KEYS.get(vendor, "")
+    if env:
+        key = os.environ.get(env, "").strip()
+        if key:
+            return key
+    if vendor == "deepseek":
+        return load_api_key()   # 回退：V0.1 api_key.txt（只读，已被 .gitignore 忽略）
+    return ""
+
+
 __all__ = [
     "V2_ROOT",
     "API_BASE_URL",
@@ -119,4 +225,10 @@ __all__ = [
     "api_key_masked",
     "PRICING",
     "get_pricing",
+    "FILMAGENT_PROVIDER",
+    "PROVIDER_ENV_API_KEYS",
+    "PROVIDERS",
+    "get_provider_config",
+    "default_text_vendor",
+    "load_provider_api_key",
 ]
