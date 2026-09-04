@@ -14,7 +14,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 双向无损转换，纯代码校验器新增 4 个（Asset/Shot/Beat/Storyboard），Agent 公共骨架抽到 `v2/agents/base.py`
 （`LLMAgent`/`LLMStep`，Casting/SceneGeneration 已改继承、行为不变）。阶段 8 测试 27/27、历史回归
 19/19+38/38+25/25+24/24+29/29 全绿、真实 LLM 调用 0 次。
-当前处于 **Stage 8 与 Stage 9 之间**：Stage 9 尚未开始，等待下一份开工指令。
+协作规范与会话管理体系已落地（COMPLETE）：A/B/C/D = 不同 Claude Code 会话/终端
+（见下文「协作与会话管理（长期规则）」），项目状态与交接沉淀到 `v2/docs/PROJECT_STATUS.md`
+与 `v2/docs/HANDOFF.md`。
+**Stage 9 尚未开始**：应在本会话结束后，由全新 Claude Code 会话 + 下一份开工指令启动。
 
 ## 铁律（违反即失控）
 
@@ -22,6 +25,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. **一切新工作只进 `v2/`**。
 3. **API key 绝不硬编码**进 Python，绝不进入日志/异常/报告；只显示脱敏形式（`config.mask_api_key`，如 `sk-****6509`）。
 4. **每阶段完成即停下**等人工验收，不自动 commit、不自动 tag、不自动进入下一阶段。
+
+## 协作与会话管理（长期规则）
+
+1. **阶段是第一层边界**：默认 `Stage N → 完成 → Git commit → 必要时 tag → 阶段结束
+   → 新 Claude Code 会话 → Stage N+1`。不要在一个长期 Claude 会话里连续完成多个 Stage。
+2. **A/B/C/D 默认 = 不同的 Claude Code 会话 / 终端**，不是四个必须同时存在的子 Agent：
+   - **A 分析 / 架构**：读项目状态、理解任务、分析代码、研究依赖、定架构方案，
+     输出 PLAN / ARCHITECTURE / 风险 / 测试方案。
+   - **B 代码实现**：按 A 留下的方案实际编码、修改必要文件、跑基础测试；
+     不重复重新分析整个项目。
+   - **C 测试 / Debug**：测试、边界检查、回归、问题定位、修复、重新验证；
+     不做无意义的全项目重构。
+   - **D 文档 / 交付**：整理成果、更新项目状态（PROJECT_STATUS / HANDOFF / 必要时
+     CLAUDE.md）、生成阶段报告、确认 Git、commit / tag，形成最终交付。
+3. **按复杂度选会话数**：小任务一个会话（A+B+C+D）；中型任务 A→B→C→D；
+   大型任务可加 A2/A3 专项分析。不要因为形式而机械开大量会话。
+4. **子 Agent 只是辅助工具**：专项代码侦察、独立研究、局部测试、并行检查。
+   A/B/C/D 本身不是四个 subagent；阶段较大时优先用不同会话 / 终端，
+   真正切断长期上下文、重建干净上下文、降低 Token 累积。
+5. **跨会话记忆靠文档**：重要信息写入 `CLAUDE.md`、`v2/docs/PROJECT_STATUS.md`、
+   `v2/docs/HANDOFF.md`、Stage Report、Git。聊天记录不作为项目长期记忆。
 
 ## 常用命令
 
@@ -115,7 +139,18 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
 
 ## 当前状态与下一步
 
-- git：HEAD = `abf8e88a983f13c437abe2b719c920d3c5c3c144`（= `v0.2-stage8` tag）；`v0.1` = `344c0c6…`（未动）、`v0.2-stage7` = `300aae4…`（未动）、`v0.2-stage8` = `abf8e88…`（阶段 8 封存）。
-- 已交付：阶段 0~8 全部完成并封存。阶段 8 = Canonical Schema（`core/shot.py` + `core/adapter.py` + `agents/base.py` + Asset/Shot/Beat/Storyboard 4 个新校验器），测试 27/27，真实 LLM 0 次。
-- 已知遗留：openai 库需按上文安装；人工审核目前是程序化 decision 模拟，交互式审核界面未做；`v2/README.md` 过时（仍写"尚未实现任何业务 Agent"）；Storyboard/Image/Video/VLM Agent 未实现；image/video/audio 资产仅 Schema 可表达。
-- 下一步：Stage 9 尚未开始，等下一份开工指令。路线图方向：StoryboardAgent / 接入第三个业务 Agent（Dialogue / Shot / Script）→ Project 生命周期 → 第一条完整业务链 → 第一集真实生成 → V0.2.0-alpha。
+- 当前阶段：协作规范与会话管理体系建设 **COMPLETE**（本次文档沉淀）；V0.2 Stage 8 **PASS + 已封存**；
+  V0.2 Stage 9 **NOT STARTED**。当前没有任何进行中的业务代码任务。
+- 权威状态文档：`v2/docs/PROJECT_STATUS.md`；给新会话的交接文档：`v2/docs/HANDOFF.md`。
+- Git：版本锚点 `v0.1` = `344c0c6…`、`v0.2-stage7` = `300aae4…`、`v0.2-stage8` = `abf8e88…`
+  三个 tag 均未移动；`FilmAgent/` 0 diff。最近 commit 见 `git log`（不在此写死 HEAD）。
+- 已交付：阶段 0~8 全部完成并封存。阶段 8 = Canonical Schema（`core/shot.py` + `core/adapter.py`
+  + `agents/base.py` + Asset/Shot/Beat/Storyboard 4 个新校验器），测试 27/27，真实 LLM 0 次。
+- 已知遗留：openai 库需按上文安装；人工审核目前是程序化 decision 模拟，交互式审核界面未做；
+  `v2/README.md` 过时（仍写"尚未实现任何业务 Agent"）；Storyboard/Image/Video/VLM Agent 未实现；
+  image/video/audio 资产仅 Schema 可表达。
+- 下一步：**关闭本会话，开全新 Claude Code 会话进入 Stage 9**（先读 CLAUDE.md →
+  `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md` → 最近 Stage Report → Git 状态 →
+  Stage 9 相关代码；开工指令在 `D:\AI\FilmAgent\`）。路线图方向：StoryboardAgent /
+  接入第三个业务 Agent（Dialogue / Shot / Script）→ Project 生命周期 → 第一条完整业务链
+  → 第一集真实生成 → V0.2.0-alpha。
