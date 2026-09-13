@@ -1,6 +1,6 @@
 # PROJECT_STATUS.md —— FilmAgent 项目状态
 
-> FilmAgent 的权威项目状态文档，任何新 Claude Code 会话开始时都应先读本文件。
+> FilmAgent 的权威项目状态文档，任何新 **WorkBuddy 会话**开始时都应先读本文件。
 > 最后更新：V0.2 Stage 10 封存后（Visual Asset Layer 文档/交付沉淀完成）。
 
 ## 1. 项目简介
@@ -279,8 +279,10 @@ StoryboardAgent（Stage 11）→ Project 生命周期 / 第一条完整业务链
 → 第一集真实生成 → V0.2.0-alpha
 ```
 
-**执行方式**：开全新 Claude Code 会话，先读 `CLAUDE.md` → 本文件 → `HANDOFF.md`
-→ Stage 11 开工指令（`D:\AI\FilmAgent\v0.2开工指令11`）→ 与 Stage 11 直接相关的代码
+**执行方式**：**新开一个 WorkBuddy 会话**（不要用 `claude` CLI / 终端 TUI），
+工作目录 `D:\AI\FilmAgent-main`。先读 `CLAUDE.md` → 本文件 → `HANDOFF.md`
+→ `ORCHESTRATION.md` → Stage 11 开工指令（`D:\AI\FilmAgent\v0.2开工指令11`）
+→ 与 Stage 11 直接相关的代码
 （`v2/core/shot.py` / `v2/core/validator.py` / `v2/agents/scene_generation.py` /
 `v2/logs/stage10_visual_asset/run_tests.py`）。
 
@@ -298,12 +300,12 @@ StoryboardAgent（Stage 11）→ Project 生命周期 / 第一条完整业务链
 
 详见 `CLAUDE.md`「协作与会话管理（长期规则）」一节。要点：
 
-- 阶段是第一层边界：一个 Claude Code 会话通常只做一个 Stage；完成后 commit
+- 阶段是第一层边界：一个 WorkBuddy 会话通常只做一个 Stage；完成后 commit
   （必要时 tag），开新会话进入下一 Stage，不在一个超长会话连续堆多个 Stage。
-- A/B/C/D 默认 = 不同的 Claude Code 会话 / 终端（A 分析架构、B 实现、C 测试调试、
+- A/B/C/D 默认 = 不同的 WorkBuddy 会话（A 分析架构、B 实现、C 测试调试、
   D 文档交付），**不是**四个并存的子 Agent。
 - 按任务复杂度选择会话数（小任务单会话 A+B+C+D；中型 A→B→C→D；大型可加专项分析），
   不机械开大量会话。
 - 子 Agent 仅用于专项代码侦察 / 独立研究 / 局部测试 / 并行检查，不替代会话边界。
-- 跨会话记忆靠文档（CLAUDE.md / 本文件 / HANDOFF.md / Stage Report / Git）；
-  聊天记录不作为项目长期记忆。
+- 跨会话记忆靠文档（CLAUDE.md / 本文件 / HANDOFF.md / ORCHESTRATION.md /
+  ROADMAP.md / Stage Report / Git）；聊天记录不作为项目长期记忆。

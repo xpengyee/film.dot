@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to WorkBuddy AI when working with code in this repository.
 
 ## 项目是什么
 
@@ -23,11 +23,11 @@ usage 上报、Model 只是 Config 里的数据。阶段 9 测试 26/26 + 历史
 profile）+ `agents/visual_asset.py`（plan=TextProvider / extract=VisionProvider）。
 **Token 硬证据**：注册视觉资产前后 `Storyboard.to_dict()` 逐字节不变；Shot 只存名字引用 + 本镜头增量。
 阶段 10 测试 76/76 + 历史回归全绿；真实 Vision 冒烟 3 次（`qwen3.7-plus`，14,433 tokens）。
-协作规范与会话管理体系已落地（COMPLETE）：A/B/C/D = 不同 Claude Code 会话/终端
+协作规范与会话管理体系已落地（COMPLETE）：A/B/C/D = 不同 **WorkBuddy 会话**
 （见下文「协作与会话管理（长期规则）」），项目状态与交接沉淀到 `v2/docs/PROJECT_STATUS.md`
 与 `v2/docs/HANDOFF.md`；总控工作手册见 `v2/docs/ORCHESTRATION.md`，路线图见 `v2/docs/ROADMAP.md`。
 **Stage 11 开工指令已就位**：`D:\AI\FilmAgent\v0.2开工指令11` = StoryboardAgent
-（Scene → Storyboard → Beat → Shot），由全新 Claude Code 会话执行。
+（Scene → Storyboard → Beat → Shot），由全新 WorkBuddy 会话执行。
 
 ## 铁律（违反即失控）
 
@@ -39,8 +39,8 @@ profile）+ `agents/visual_asset.py`（plan=TextProvider / extract=VisionProvide
 ## 协作与会话管理（长期规则）
 
 1. **阶段是第一层边界**：默认 `Stage N → 完成 → Git commit → 必要时 tag → 阶段结束
-   → 新 Claude Code 会话 → Stage N+1`。不要在一个长期 Claude 会话里连续完成多个 Stage。
-2. **A/B/C/D 默认 = 不同的 Claude Code 会话 / 终端**，不是四个必须同时存在的子 Agent：
+   → 新 WorkBuddy 会话 → Stage N+1`。不要在一个长期会话里连续完成多个 Stage。
+2. **A/B/C/D 默认 = 不同的 WorkBuddy 会话**，不是四个必须同时存在的子 Agent：
    - **A 分析 / 架构**：读项目状态、理解任务、分析代码、研究依赖、定架构方案，
      输出 PLAN / ARCHITECTURE / 风险 / 测试方案。
    - **B 代码实现**：按 A 留下的方案实际编码、修改必要文件、跑基础测试；
@@ -173,10 +173,10 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
   交互式 UI 未做；Storyboard/Image/Video/VLM Agent 未实现；image/video/audio 仅 Schema +
   Provider 预留接口，尚无真实生成；`structured=` 真实后端支持未验证；`bailian_vision`
   `pricing=None` → est_cost 为 null，属配置护栏）。
-- 下一步：**开全新 Claude Code 会话执行 Stage 11**（`cd /d D:\AI\FilmAgent-main` → `claude`
-  → 读 CLAUDE.md → `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md` → 最近 Stage Report
-  `stage10_report.md` → Git 状态 → Stage 11 开工指令 `D:\AI\FilmAgent\v0.2开工指令11`
-  → 相关代码）。
+- 下一步：**新开一个 WorkBuddy 会话执行 Stage 11**（工作目录 `D:\AI\FilmAgent-main`；
+  **不要用 `claude` CLI** → 读 CLAUDE.md → `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md`
+  → `v2/docs/ORCHESTRATION.md` → 最近 Stage Report `stage10_report.md` → Git 状态
+  → Stage 11 开工指令 `D:\AI\FilmAgent\v0.2开工指令11` → 相关代码）。
   Stage 11 = **StoryboardAgent**（Scene → Storyboard → Beat → Shot），Shot 落在 Stage 8
   受控词表内、引用 Stage 10 视觉资产、可被 `VisualComposer` 消费。
   路线图方向：Project 生命周期 / 第一条完整业务链（Stage 12）→ 第一集真实生成 → V0.2.0-alpha。
