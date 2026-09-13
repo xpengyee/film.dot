@@ -18,6 +18,25 @@ logs/**/project_*/
 logs/**/runs/
 logs/**/test_output_*
 
+# ---------- Stage 10 视觉资产的运行时产物（不忽略脚本/报告/结构化 JSON 证据） ----------
+# 1) 真实/临时项目目录下的图片本体与注册表：二进制素材，绝不进版本库
+#    （结构证据由 stage*_report.md / real_run_report.json 承载，不含图片本体）
+logs/**/visual_assets/images/
+logs/**/visual_assets/registry.json
+# 2) 真实冒烟运行目录：真实 API 调用产生的项目目录（含图片 + 注册表快照）
+logs/**/real_smoke_single_image/
+logs/**/real_project/
+# 3) 真实 API 记账 / 临时产物（token 明细含 prompt 统计与耗时，属运行产物）
+logs/**/real_vision_calls.jsonl
+logs/**/real_llm_calls.jsonl
+logs/**/image_generation_calls.jsonl
+
+# ---------- API 调用记账文件（全局兜底，任意层级） ----------
+# llm/client.py 与 TokenLogger 默认写当前工作目录的 llm_calls.jsonl；
+# 上一条 logs/**/ 只覆盖 logs 子树，故此处显式兜底 v2/ 与仓库根。
+llm_calls.jsonl
+**/llm_calls.jsonl
+
 # Python 运行时缓存（根 .gitignore 已覆盖，这里冗余自包含）
 __pycache__/
 *.py[cod]

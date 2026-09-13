@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`FilmAgent/`（V0.1）**：冻结基准，是一套已跑通的串行流水线（casting → scenes_plan → lines_generate → … → clean_script），依赖 DeepSeek（`LLMCaller.py` + `Prompt/`）。**任何情况下不得修改。**
 - **`v2/`（V0.2）**：全新重写的基础设施——可测试、可扩展、有人工审核的多智能体框架，按阶段推进，每阶段由独立的"开工指令"文件（位于 `D:\AI\FilmAgent\`）控制。
 
-**当前进度：阶段 8（Canonical Schema）与阶段 9（Provider Architecture）均已完成并封存。**
+**当前进度：阶段 8（Canonical Schema）、阶段 9（Provider Architecture）、阶段 10（Visual Asset Layer）均已完成并封存。**
 阶段 8：Canonical Schema 落地——`Project → Scene → Beat → Shot → Asset`（`v2/core/shot.py`），
 V0.1 经 `v2/core/adapter.py` 双向无损转换，新增 4 个校验器，Agent 公共骨架抽到 `v2/agents/base.py`。
 阶段 9：Multi-Modal **Provider Architecture** —— 把"用哪个模型、怎么调用"从业务代码剥离进
@@ -17,11 +17,17 @@ V0.1 经 `v2/core/adapter.py` 双向无损转换，新增 4 个校验器，Agent
 Router 真入口 + Config Provider 注册表（deepseek/bailian/local…）+ Bailian 文本实现位。
 职责划分：Agent 说"要什么"、Router 说"用哪家哪个模型"、Provider 执行调用并做瞬时错误重试与
 usage 上报、Model 只是 Config 里的数据。阶段 9 测试 26/26 + 历史回归全绿 + 真实 API 0 次 + ¥0.00。
+阶段 10：**Visual Asset Layer** —— 语义与视觉分离：`core/visual.py`（五类资产/七态/参考图/来源词表）+
+`core/visual_registry.py`（`(kind,name)` 永久绑定、版本单调递增绝不覆盖、参考图 sha256 checksum、
+生命周期=Review 三态的确定性派生）+ `core/visual_compose.py`（VisualComposer 在调用模型前一次性展开
+profile）+ `agents/visual_asset.py`（plan=TextProvider / extract=VisionProvider）。
+**Token 硬证据**：注册视觉资产前后 `Storyboard.to_dict()` 逐字节不变；Shot 只存名字引用 + 本镜头增量。
+阶段 10 测试 76/76 + 历史回归全绿；真实 Vision 冒烟 3 次（`qwen3.7-plus`，14,433 tokens）。
 协作规范与会话管理体系已落地（COMPLETE）：A/B/C/D = 不同 Claude Code 会话/终端
 （见下文「协作与会话管理（长期规则）」），项目状态与交接沉淀到 `v2/docs/PROJECT_STATUS.md`
-与 `v2/docs/HANDOFF.md`。
-**Stage 10 尚未开始**：应在本会话结束后，由全新 Claude Code 会话 + 下一份**正式开工指令**启动
-（Stage 10 尚未制定开工方案前不要开工，也不要虚构其实现细节）。
+与 `v2/docs/HANDOFF.md`；总控工作手册见 `v2/docs/ORCHESTRATION.md`，路线图见 `v2/docs/ROADMAP.md`。
+**Stage 11 开工指令已就位**：`D:\AI\FilmAgent\v0.2开工指令11` = StoryboardAgent
+（Scene → Storyboard → Beat → Shot），由全新 Claude Code 会话执行。
 
 ## 铁律（违反即失控）
 
@@ -78,11 +84,14 @@ python v2/logs/stage7_scene_generation/run_tests.py             # 29/29（T01~T1
 python v2/logs/stage7_scene_generation/run_real_scene_generation.py  # T21~T25，最小真实 DeepSeek 调用（计费）
 python v2/logs/stage8_canonical_schema/run_tests.py                 # 27/27（词表/模型/校验/适配器/骨架），mock，0 次真实调用
 python v2/logs/stage9_provider/run_tests.py                         # 26/26（Provider 接口族/Mock/工厂/Router/Config/E2E + 内嵌回归），mock，0 次真实调用
+python v2/logs/stage10_visual_asset/run_tests.py                    # 76/76（Visual Asset 五类七态/Registry/参考图 sha256/Composer/计数器/E2E + 内嵌回归），mock，0 次真实调用
+python v2/logs/stage10_visual_asset/run_real_visual_extraction.py   # 真实 Vision 冒烟（qwen3.7-plus，计费，人工批准）
 ```
 
-- **日常回归策略**：跑 stage9 套件即可（其内嵌子进程已覆盖 stage1/3/4/6/7/8）；也可单独逐套跑 stage4 + stage6 + stage7 + stage8 核对。
+> **跑测试务必加 `env -u PYTHONPATH`**（宿主经 `PYTHONPATH` 注入 `sitecustomize` shim 劫持
+> `shutil.rmtree`，会导致历史套件假失败；判据=独立复跑 rc=0。详见 `v2/docs/ORCHESTRATION.md` §5.1）。
 
-- **日常回归策略**：跑 stage4 套件（内含 stage1/2(mock)/3 复验）+ stage6 套件 + stage7 套件即可覆盖全部。
+- **日常回归策略**：跑 stage10 套件即可（其内嵌子进程已覆盖 stage1/3/4/6/7/8/9）；也可单独逐套跑 stage4 + stage6 + stage7 + stage8 + stage9 + stage10 核对。
 - **真实 LLM 调用只走独立脚本**（stage2 完整套件、stage6 的 `run_real_casting.py`），日常回归 0 计费。
 - **静态检查**（阶段 5 方式，环境无 ruff/mypy）：`compileall` + 全模块 import 冒烟 + 用正则扫 v2/ 源码里的真实 key 与硬编码绝对路径。
 - V0.1 冻结的自动化断言（stage3/4/6/7 各套件的 V0.1 完整性测试）：`v0.1^{commit}` 固定 `344c0c6…`、`v0.2-stage7` tag 存在、`git diff -- FilmAgent/` 为空、`FilmAgent/` 无 dirty 行。
@@ -102,13 +111,13 @@ core → (llm | memory | context) → workflow → review → agents
 
 | 层 | 位置 | 职责 |
 |---|---|---|
-| core | `v2/core/` | `models.py`（Scene/Character/Line/…/CastingResult）、`shot.py`（阶段8 Canonical：Shot/Beat/Storyboard/ShotAsset/受控词表）、`adapter.py`（阶段8：V0.1↔Canonical 无损转换）、`validator.py`、`io.py`（JSON 读写 + V0.1 字段容错）、`assets.py`、`token_log.py`（JSONL，不记 key 不记 prompt 正文） |
-| llm | `v2/llm/` | `client.py`（`LLMClient.chat` → `LLMResponse`；`LLMError` 错误家族带 `retryable`、重试、token log；transport 可注入）+ `providers/`（阶段 9：`Provider` 接口族 Text/Vision/Multimodal/Embedding + Mock 四件套 + `OpenAICompatibleTextProvider` + `BailianTextProvider` + `registry.create_provider` 工厂）+ `router.py`（`get_route` → `ProviderRoute`、`get_provider` 产出实例） |
+| core | `v2/core/` | `models.py`（Scene/Character/Line/…/CastingResult）、`shot.py`（阶段8 Canonical：Shot/Beat/Storyboard/ShotAsset/受控词表）、`adapter.py`（阶段8：V0.1↔Canonical 无损转换）、`validator.py`、`io.py`（JSON 读写 + V0.1 字段容错）、`assets.py`、`token_log.py`（JSONL，不记 key 不记 prompt 正文）、`visual.py` / `visual_registry.py` / `visual_compose.py`（阶段10：视觉身份+版本+参考图 / Registry / Composer） |
+| llm | `v2/llm/` | `client.py`（`LLMClient.chat` → `LLMResponse`；`LLMError` 错误家族带 `retryable`、重试、token log；transport 可注入）+ `providers/`（阶段 9：`Provider` 接口族 Text/Vision/Multimodal/Embedding + Mock 四件套 + `OpenAICompatibleTextProvider` + `BailianTextProvider` + `OpenAICompatibleVisionProvider`（阶段10）+ `registry.create_provider` 工厂）+ `router.py`（`get_route` → `ProviderRoute`、`get_provider` 产出实例）+ `request_counter.py`（阶段10：真实请求计数 + 预算硬上限） |
 | memory | `v2/memory/store.py` | `MemoryStore(project_id)`；facts 三态 candidate/approved/rejected、characters、world、history |
 | context | `v2/context/assembler.py` | `ContextAssembler` 按 Step 声明的 `needs` 组装 `AssembledContext`（每条带来源信息） |
 | workflow | `v2/workflow/` | `Step`（run/validate）、`WorkflowEngine.run(project_id, workflow_id, inputs, max_attempts, resume_from)`、`ArtifactStore`（版本化落盘）、状态机 |
 | review | `v2/review/service.py` | submit / approve / approve_with_edit / reject；记录持久化到项目 `reviews/` |
-| agents | `v2/agents/` | 公共骨架 `base.py`（`LLMAgent`/`LLMStep`，阶段8抽取，Casting/SceneGeneration 已改继承）+ 业务 Agent 见下 |
+| agents | `v2/agents/` | 公共骨架 `base.py`（`LLMAgent`/`LLMStep`，阶段8抽取）+ `casting.py` / `scene_generation.py` / `visual_asset.py`（阶段10） |
 
 ### 数据流闭环（阶段 6/7 验证成立）
 
@@ -136,6 +145,10 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
 - **Casting 跨集决策**（确定性规则，不是 LLM 说了算）：名字命中已有角色 → `existing`（复用，忽略 LLM 自创档案防改档）；否则 → `new`（必须带完整档案）。`CastingValidator` 兜底（INVALID_STATUS / UNKNOWN_CHARACTER / DUPLICATE_ROLE / MISSING_FIELD / WRONG_TYPE）。
 - **Character.age 默认 `None`**（落盘为 null，不是空串）；`Character` 序列化方法是 `to_v01()` 而非 `to_dict()`。
 - **V0.1 兼容逻辑只允许在边界层**（`core/models.py` 的 `from_v01_*`/`to_v01_*`、`core/io.py` 的容错、`core/adapter.py` 的 Canonical↔V0.1 转换），禁止散落到业务代码。
+- **语义与视觉分离（阶段 10，长期遵守）**：`Character`/`Location` 语义模型 0 改、不加视觉字段；视觉身份独立在 `VisualAsset`（`(kind,name)` 永久绑定、`asset_id` 永不变、版本单调递增绝不覆盖、参考图挂**版本**并记 sha256）。
+- **Token 纪律（阶段 10，Stage 11+ 必须延续）**：Shot/Artifact **只存名字级引用 + 本镜头视觉增量**，绝不复制角色外貌/地点环境；调用模型前由 `VisualComposer.compose()` 一次性展开。硬证据：注册视觉资产前后 `Storyboard.to_dict()` **逐字节不变**。
+- **缺口宁停不错**：`VisualComposer` 缺 approved 档案时默认 `allow_partial=False` → 明确报错列缺口，绝不静默残缺生成。
+- **真实 API 计数**：`llm/request_counter.py` 程序化计数 + 预算硬上限（不靠人工数数）；真实调用只走独立 `run_real_*.py`（默认 `FILMAGENT_PROVIDER=mock` → 0 API）。
 
 ## 测试约定
 
@@ -146,20 +159,24 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
 
 ## 当前状态与下一步
 
-- 当前阶段：V0.2 Stage 8（Canonical Schema）与 Stage 9（Provider Architecture）均 **PASS + 已封存**；
-  V0.2 Stage 10 **NOT STARTED**。当前没有任何进行中的业务代码任务。
-- 权威状态文档：`v2/docs/PROJECT_STATUS.md`；给新会话的交接文档：`v2/docs/HANDOFF.md`。
+- 当前阶段：V0.2 Stage 8 / 9 / 10 均 **PASS + 已封存**；
+  V0.2 Stage 11 **NOT STARTED**（开工指令已就位）。当前没有任何进行中的业务代码任务。
+- 权威状态文档：`v2/docs/PROJECT_STATUS.md`；给新会话的交接文档：`v2/docs/HANDOFF.md`；
+  总控工作手册：`v2/docs/ORCHESTRATION.md`；路线图：`v2/docs/ROADMAP.md`。
 - Git：版本锚点 `v0.1` = `344c0c6…`、`v0.2-stage7` = `300aae4…`、`v0.2-stage8` = `abf8e88…`、
-  `v0.2-stage9` = 本次 Stage 9 commit；四个 tag 均未移动；`FilmAgent/` 0 diff。
-  最近 commit 见 `git log`（不在此写死 HEAD）。
-- 已交付：阶段 0~9 全部完成并封存。阶段 9 = Provider Architecture（`v2/llm/providers/` 接口族 +
-  Mock 四件套 + Registry/Factory + Router 真入口 + Config Provider 注册表 + Bailian 文本实现位），
-  测试 26/26 + 历史回归全绿，真实 LLM 0 次。
-- 已知遗留：openai 库需按上文安装；人工审核目前是程序化 decision 模拟，交互式审核界面未做；
-  Storyboard/Image/Video/VLM Agent 未实现；image/video/audio 仅 Schema + Provider 预留接口可表达，
-  尚无真实生成；`structured=` 真实后端支持未验证（需人工批准的最小真实冒烟）。
-- 下一步：**关闭本会话，等待 Stage 10 正式开工指令后开全新 Claude Code 会话**（先读 CLAUDE.md →
-  `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md` → 最近 Stage Report（`stage9_report.md`）→
-  Git 状态 → Stage 10 相关代码；Stage 10 开工指令在 `D:\AI\FilmAgent\`，目前尚未生成）。
-  路线图方向：StoryboardAgent / 接入下一个业务 Agent → Project 生命周期 → 第一条完整业务链
-  → 第一集真实生成 → V0.2.0-alpha。
+  `v0.2-stage9` = `82a89b5…`、`v0.2-stage10` = 本次 Stage 10 commit；五个 tag 均未移动；
+  `FilmAgent/` 0 diff；仓库根 `.gitignore` 0 diff。最近 commit 见 `git log`（不在此写死 HEAD）。
+- 已交付：阶段 0~10 全部完成并封存。阶段 10 = Visual Asset Layer（`core/visual*` 三模块 +
+  `agents/visual_asset.py` + `OpenAICompatibleVisionProvider` + `request_counter`），
+  测试 76/76 + 历史回归全绿，真实 Vision 冒烟 3 次（qwen3.7-plus，14,433 tokens）。
+- 已知遗留：见 `v2/docs/PROJECT_STATUS.md` §6（openai 库安装；人工审核是程序化模拟，
+  交互式 UI 未做；Storyboard/Image/Video/VLM Agent 未实现；image/video/audio 仅 Schema +
+  Provider 预留接口，尚无真实生成；`structured=` 真实后端支持未验证；`bailian_vision`
+  `pricing=None` → est_cost 为 null，属配置护栏）。
+- 下一步：**开全新 Claude Code 会话执行 Stage 11**（`cd /d D:\AI\FilmAgent-main` → `claude`
+  → 读 CLAUDE.md → `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md` → 最近 Stage Report
+  `stage10_report.md` → Git 状态 → Stage 11 开工指令 `D:\AI\FilmAgent\v0.2开工指令11`
+  → 相关代码）。
+  Stage 11 = **StoryboardAgent**（Scene → Storyboard → Beat → Shot），Shot 落在 Stage 8
+  受控词表内、引用 Stage 10 视觉资产、可被 `VisualComposer` 消费。
+  路线图方向：Project 生命周期 / 第一条完整业务链（Stage 12）→ 第一集真实生成 → V0.2.0-alpha。

@@ -15,12 +15,18 @@ from llm.client import (
     LLMResponse, LLMClient,
 )
 from llm.router import Router, ProviderRoute
+from llm.request_counter import (
+    MAX_REAL_VISION_REQUESTS, APIBudgetExceededError,
+    APIRequestCounter, CountingProviderWrapper,
+    get_api_counter, set_api_counter, reset_api_counter,
+)
 from llm.providers import (
     Provider, TextProvider, VisionProvider, MultimodalProvider, EmbeddingProvider,
     ImageGenerationProvider, VideoGenerationProvider, AudioProvider,
     ProviderResult, EmbeddingResult,
     MockTextProvider, MockVisionProvider, MockMultimodalProvider, MockEmbeddingProvider,
     OpenAICompatibleTextProvider, BailianTextProvider,
+    OpenAICompatibleVisionProvider, OpenAICompatibleMultimodalProvider,
     create_provider, get_default_provider,
 )
 
@@ -28,7 +34,11 @@ __all__ = [
     "LLMError", "LLMTimeoutError", "LLMConnectionError", "LLMRateLimitError",
     "LLMInternalError", "LLMRequestError", "LLMAuthenticationError",
     "LLMResponse", "LLMClient", "Router", "ProviderRoute",
-    # ---- Provider 抽象与实现（Stage 9） ----
+    # ---- API 请求计数 / 预算硬上限（Stage 10-B） ----
+    "MAX_REAL_VISION_REQUESTS", "APIBudgetExceededError",
+    "APIRequestCounter", "CountingProviderWrapper",
+    "get_api_counter", "set_api_counter", "reset_api_counter",
+    # ---- Provider 抽象与实现（Stage 9 / 10-B） ----
     "Provider", "TextProvider", "VisionProvider", "MultimodalProvider",
     "EmbeddingProvider",
     "ImageGenerationProvider", "VideoGenerationProvider", "AudioProvider",
@@ -36,5 +46,6 @@ __all__ = [
     "MockTextProvider", "MockVisionProvider", "MockMultimodalProvider",
     "MockEmbeddingProvider",
     "OpenAICompatibleTextProvider", "BailianTextProvider",
+    "OpenAICompatibleVisionProvider", "OpenAICompatibleMultimodalProvider",
     "create_provider", "get_default_provider",
 ]

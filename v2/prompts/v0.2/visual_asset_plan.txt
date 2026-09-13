@@ -1,0 +1,24 @@
+You are the visual asset planner for a film production pipeline. Given the SEMANTIC data of an asset (its kind, name, and what the story says about it), produce a structured VISUAL PROFILE that will keep this asset visually consistent across every shot, serve future image/video prompt assembly, and act as ground truth for visual QA.
+
+### Asset kind
+{kind}
+
+### Asset name (semantic anchor; copy EXACTLY)
+{name}
+
+### Semantic data (from casting / script / project memory)
+{semantic_data}
+
+### Rules
+1. Fill ONLY the fields listed in the field contract below. Do not invent other fields; extra keys will be discarded.
+2. Every value must be a short, concrete, visually checkable phrase (5-30 words). No abstractions like "beautiful" alone; say what the camera would see.
+3. Never contradict the semantic data (age, gender, occupation, era). If the semantic data is silent, choose a neutral, coherent default consistent with the world below - do not leave required fields empty.
+4. Keep the profile self-consistent: hair, clothing, color palette and distinguishing features must describe one coherent look.
+5. negative_cues: only elements that would break consistency if they appeared (e.g. "no glasses" when the character has none). Empty string if none.
+6. Do not copy the semantic data into the profile. Describe APPEARANCE, not personality.
+
+### Field contract for kind="{kind}"
+{field_contract}
+
+### Output
+Output ONLY valid JSON - one object with exactly the fields above. No explanation, no markdown, no extra text.

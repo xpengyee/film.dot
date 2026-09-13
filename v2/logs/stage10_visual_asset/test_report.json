@@ -1,0 +1,389 @@
+{
+  "suite": "stage10_visual_asset",
+  "real_api_requests": 0,
+  "mock_requests": "programmatic (see T13 snapshot assertions)",
+  "results": [
+    {
+      "name": "T01a 视觉资产五类/七态/参考图/来源词表",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T01b ID/版本/checksum 格式工具",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T01c 状态转移表（§10.2）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02a VisualAsset/Version/ReferenceImage 往返一致",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02b normalize：只留已知字段/strip/空串兜底",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02c per-kind Profile 类 / reference 无 profile / 必填清单",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03a INVALID_KIND（早停）/INVALID_ASSET_ID/MISSING_FIELD(name)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03b INVALID_VERSION/INVALID_STATUS/INVALID_SOURCE",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03c per-kind 必填门槛（draft 放行 / approved 强制）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03d 指针一致性 / DUPLICATE_ACTIVE / INVALID_STATE",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03e 参考图校验 + 退役一致性",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03f registry 级 DUPLICATE_NAME / DUPLICATE_ASSET_ID / 跨 kind 同名合法",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03g validate_profile_dict（含 reference 无 profile 放行）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T04a ID 按 kind 前缀计数分配",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T04b (kind,name) 绑定唯一 / 非法 kind·空名报错",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T04c registry.json 持久化往返（含计数器防回退）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05a draft→reviewing→approved；approved 才生效",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05b 新版本批准 → 旧版本 superseded，内容绝不覆盖",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05c reject 保留记录 / rejected 不能直接 approve",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05d APPROVED_WITH_EDIT 指路新版本 / 未知决策报错",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05e 非法转移报错 / archive 资产级退役",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05f 版本号永不复用（next=v5）/ 缺失资产明确报错",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06 参考图登记：sha256/IMG 计数/持久化/缺文件明确报错",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06b-1 Asset→v1→add_reference_image：reference_images 非空/image_id·path·kind/checksum=sha256",
+      "ok": true,
+      "detail": "expect=c414cd0e204d… got=c414cd0e204d…"
+    },
+    {
+      "name": "T06b-2 同图重复注册：checksum 稳定一致（非文件名/时间戳/UUID）",
+      "ok": true,
+      "detail": "c414cd0e204d… == c414cd0e204d…"
+    },
+    {
+      "name": "T06b-3 不同内容 → 不同 checksum（内容寻址而非身份寻址）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06b-4 参考图 + checksum 持久化往返（顺序/IMG 号不丢）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06b-5 CHAR_001:v1→新 reference→v2：v1 保留/v2 独立/身份不变",
+      "ok": true,
+      "detail": "v1 refs=3 v2 refs=1"
+    },
+    {
+      "name": "T06b-6 换参考图=新版本入口：旧版本参考图不被改写",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06c-1 校验器：require_complete=True 下缺必填 → 报错",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06c-2 VisualAssetStep.validate：complete=False → FAIL（MISSING_FIELD）",
+      "ok": true,
+      "detail": "['[VisualAssetValidator] MISSING_FIELD at data.profile.face\\n  character 档案必填字段为空。\\n  expected: non-empty str\\n\\n[VisualAssetValidator] MISS"
+    },
+    {
+      "name": "T06c-3 门槛是确定性返回（错误列表）而非异常：Workflow 据此拒绝推进",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06c-4 同一 Step 对 complete=True 通过（门槛不误杀）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06c-5 Smoke 观察 vs Workflow 门槛：同一快照两种结论（预期差异）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T07a Composer 解析 character/location/prop/style + camera/duration",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T07b render_prompt 紧凑文本 + negative_cues 合并去重",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T07c 缺口明确报错列清单 / allow_partial 记录缺口跳过",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T07d 风格三级解析：override > 显式默认 > 唯一 approved > 多个报错",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T08 Token 硬证据：组装前后 Storyboard 序列化逐字节不变，profile 不渗漏",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09a 初始 real=0 mock=0 retries=0；上限常量=3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09b 真实计数 + retry 计数（1 次业务调用 2 次 HTTP → retries=1）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09c real / mock 分开记账",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09d 预算硬上限：第 4 次被立即拒绝且计数仍=3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09e 审计最小集（无 key/无 prompt 正文）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09f 计数器按 kind 分桶可复用（text 不受 vision 预算限制）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T14 并发安全冒烟：8 线程 × 200 次不丢计数",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10a 成功 1 次调用 = 1 次真实请求（计数点在传输出口）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10b retry 也计数：1 次业务调用 2 次 HTTP（attempt=1,2）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10c 本地校验失败不发送也不计数（不消耗预算）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10d 预算=3：第 4 次请求被立即拒绝，计数仍=3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10e Multimodal 独立预算桶（协议同族复用同一实现）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10f 请求 payload = OpenAI 兼容图文 parts（本地文件 base64）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10g 审计无 API key / 无 prompt 正文",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T11a Wrapper 在调用边界计 mock（不碰真实账本）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T11b 工厂护栏：真实档需配置 / mock 分支不变 / 生成类仍拒绝",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T12a plan 模式（mock 文本）：规范化确定性 + complete 门槛",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T12b extract 模式（mock 视觉）：0 真实 API，mock 计数程序化核对",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T12c 缺 VisionProvider / 非法 kind / field_contract 文本",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T12d Step 壳：spec 派发 / artifact 命名 / validate（scene_spec 模式）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T13 E2E mock：plan→registry→审批→Composer 消费（0 真实 API）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "R-stage1 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "R-stage3 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "R-stage4 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "R-stage6 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "R-stage7 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "R-stage8 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "R-stage9 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T15a 禁改文件 0 diff（含 FilmAgent/ 冻结）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T15b config.py 预期 0 改（bailian_vision 槽位既有）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16a compileall 全过",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16b ASSET_KINDS 精确不变（stage8 封存前提）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16c import 冒烟 + 新导出齐备",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16d 新增文件无硬编码 key（sk- 字样一律扫描）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T17a 测试图片/真实产物/API 记账被忽略（不污染 Git）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T17b 脚本/报告/结构化 JSON 证据未被误忽略",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T17c 仓库根 .gitignore 0 diff（V0.1 冻结延伸）",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "passed": 76,
+  "total": 76
+}

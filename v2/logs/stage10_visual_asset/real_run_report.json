@@ -1,0 +1,134 @@
+{
+  "timestamp": "2026-09-13T13:33:13",
+  "model": "qwen3.7-plus",
+  "vendor": "bailian",
+  "api_key": "sk-****fvxg",
+  "counter_snapshot": {
+    "real_api_requests": 3,
+    "mock_requests": 0,
+    "logical_calls": 3,
+    "retries": 0,
+    "budget_rejections": 0,
+    "by_kind": {
+      "vision": {
+        "real": 3,
+        "mock": 0,
+        "logical": 3
+      }
+    },
+    "budget": {
+      "vision": 3
+    }
+  },
+  "audit_records": [
+    {
+      "timestamp": "2026-09-13T13:31:14+0800",
+      "provider": "bailian",
+      "model": "qwen3.7-plus",
+      "modality": "vision",
+      "request_id": "ea7ea5c6c06f4a1ebdc77c85b69e6da3",
+      "attempt": 1,
+      "is_real": true,
+      "note": "OpenAICompatibleVisionProvider.attempt"
+    },
+    {
+      "timestamp": "2026-09-13T13:32:07+0800",
+      "provider": "bailian",
+      "model": "qwen3.7-plus",
+      "modality": "vision",
+      "request_id": "1c4d7d46d103494e93c302b5b6869276",
+      "attempt": 1,
+      "is_real": true,
+      "note": "OpenAICompatibleVisionProvider.attempt"
+    },
+    {
+      "timestamp": "2026-09-13T13:32:43+0800",
+      "provider": "bailian",
+      "model": "qwen3.7-plus",
+      "modality": "vision",
+      "request_id": "5c0089a6912c429ea8ef22e1b858d668",
+      "attempt": 1,
+      "is_real": true,
+      "note": "OpenAICompatibleVisionProvider.attempt"
+    }
+  ],
+  "samples": [
+    {
+      "sample": 1,
+      "label": "人物参考图 A → CHAR v1",
+      "status": "ok",
+      "asset": "CHAR_001",
+      "version": "v1",
+      "requests_used_this_sample": 1,
+      "business_request_id": "ea7ea5c6c06f4a1ebdc77c85b69e6da3",
+      "active_version": "v1",
+      "complete": false,
+      "profile": {
+        "appearance": "Slender figure seen from behind wearing a dark hooded coat, standing amidst a chaotic, shattered landscape of red and blue energy.",
+        "face": "",
+        "hair": "",
+        "clothing": "Long dark grey hooded coat or cloak; pale legs visible below.",
+        "body": "Slender build with long legs.",
+        "color_palette": "Dark grey, pale white, red, orange, cyan blue.",
+        "distinguishing_features": "Hooded silhouette.",
+        "visual_style": "Anime illustration style, high contrast, dramatic lighting.",
+        "negative_cues": ""
+      }
+    },
+    {
+      "sample": 2,
+      "label": "场景参考图 → LOC v1",
+      "status": "ok",
+      "asset": "LOC_001",
+      "version": "v1",
+      "requests_used_this_sample": 1,
+      "business_request_id": "1c4d7d46d103494e93c302b5b6869276",
+      "active_version": "v1",
+      "complete": true,
+      "profile": {
+        "environment": "Exterior surreal landscape, chaotic and intense mood, sci-fi anime aesthetic.",
+        "lighting": "Dramatic high-contrast lighting, glowing red and cyan emissions, bright white backlight.",
+        "palette": "Deep reds, blacks, whites, and electric blue.",
+        "architecture": "Abstract jagged geometric forms, large mechanical wing structures, fractured ground with glowing cracks.",
+        "time_of_day": "",
+        "distinguishing_features": "Fractured terrain with blue energy veins, large abstract wing-like structures in background.",
+        "visual_style": "Anime digital art, cel-shaded, high contrast.",
+        "negative_cues": "cafe tables; chairs; coffee machines; warm interior lighting; brick walls; windows; realistic style"
+      }
+    },
+    {
+      "sample": 3,
+      "label": "人物参考图 B → CHAR v2（版本机制）",
+      "status": "ok",
+      "asset": "CHAR_001",
+      "version": "v2",
+      "requests_used_this_sample": 1,
+      "business_request_id": "5c0089a6912c429ea8ef22e1b858d668",
+      "active_version": "v2",
+      "complete": false,
+      "profile": {
+        "appearance": "Stylized anime illustration of a lone figure in white standing amidst chaotic, abstract geometric shards and lightning.",
+        "face": "",
+        "hair": "",
+        "clothing": "Long white coat or dress with high collar, appearing hooded or obscured by shadow.",
+        "body": "Slender silhouette, pale legs visible below the hem of the white garment.",
+        "color_palette": "High-contrast mix of deep blacks, vibrant reds, electric blues, and bright whites.",
+        "distinguishing_features": "",
+        "visual_style": "Digital anime art style with sharp vector-like lines and dramatic lighting effects.",
+        "negative_cues": "realistic textures; cluttered background; warm earth tones"
+      }
+    }
+  ],
+  "fallback_notes": [],
+  "registry_summary": {
+    "assets": 2,
+    "by_kind": {
+      "character": 1,
+      "location": 1
+    },
+    "versions": 3,
+    "active": 2
+  },
+  "char_v1_status_after_v2": "superseded",
+  "token_cost_log": "D:\\AI\\FilmAgent-main\\v2\\logs\\stage10_visual_asset\\real_vision_calls.jsonl"
+}

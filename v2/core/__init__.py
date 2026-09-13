@@ -10,8 +10,11 @@ review）都只向上依赖 core 或同级。包含七件事：
     assets     资产注册表（地点 / 动作 / 镜头 / 站位点）
     shot       Canonical 镜头层 Schema（阶段 8：受控词表 + Shot / Beat / Storyboard / ShotAsset）
     adapter    V0.1 ↔ Canonical 边界转换器（阶段 8：script 往返无损）
-    validator  校验器（Enum / Reference / Schema / Casting / 阶段8 Shot·Beat·Storyboard·Asset）
+    validator  校验器（Enum / Reference / Schema / Casting / 阶段8 Shot·Beat·Storyboard·Asset / 阶段10 VisualAsset）
     token_log  Token / Cost 记录（JSONL，不记 key、不记 prompt 正文）
+    visual     视觉资产数据模型（阶段 10：Profile / VisualAsset / Version / ReferenceImage）
+    visual_registry   视觉资产注册表（身份/版本/生命周期派生/持久化）
+    visual_compose    VisualComposer（Shot → 组装输入，Token 控制核心）
 
 阶段 5 清理：补齐本 __init__.py，与 memory / context / review / workflow 的入口风格一致。
 阶段 8：新增 core.shot（Canonical 镜头层）与 core.adapter（V0.1 边界转换），
@@ -40,11 +43,26 @@ from core.validator import (
     ValidationError, format_errors, VALID_STATES,
     EnumValidator, ReferenceValidator, SchemaValidator, CastingValidator, Validator,
     AssetValidator, ShotValidator, BeatValidator, StoryboardValidator,
+    VisualAssetValidator,
 )
 from core.token_log import (
     TokenUsage, estimate_cost, LLMCallRecord, compute_prompt_hash,
     new_request_id, now_iso, TokenLogger,
 )
+from core.visual import (
+    VISUAL_ASSET_KINDS, VISUAL_VERSION_STATUSES, REFERENCE_IMAGE_KINDS,
+    REFERENCE_PURPOSES, VISUAL_SOURCES, ASSET_ID_PREFIX, LEGAL_STATUS_TRANSITIONS,
+    asset_id_for, is_valid_asset_id, is_valid_version, version_number,
+    is_valid_checksum,
+    CharacterVisualProfile, LocationVisualProfile, PropVisualProfile, StyleProfile,
+    PROFILE_CLASSES, new_profile, normalize_profile_fields,
+    ReferenceImage, VisualAssetVersion, VisualAsset,
+)
+from core.visual_registry import (
+    DECISION_APPROVED, DECISION_APPROVED_WITH_EDIT, DECISION_REJECTED,
+    VisualRegistryError, sha256_of_file, VisualAssetRegistry,
+)
+from core.visual_compose import VisualComposer, ComposedVisualInput, VisualComposeError
 
 __all__ = [
     # io
@@ -69,6 +87,18 @@ __all__ = [
     "ValidationError", "format_errors", "VALID_STATES",
     "EnumValidator", "ReferenceValidator", "SchemaValidator", "CastingValidator", "Validator",
     "AssetValidator", "ShotValidator", "BeatValidator", "StoryboardValidator",
+    "VisualAssetValidator",
+    # visual（Stage 10 视觉资产层）
+    "VISUAL_ASSET_KINDS", "VISUAL_VERSION_STATUSES", "REFERENCE_IMAGE_KINDS",
+    "REFERENCE_PURPOSES", "VISUAL_SOURCES", "ASSET_ID_PREFIX", "LEGAL_STATUS_TRANSITIONS",
+    "asset_id_for", "is_valid_asset_id", "is_valid_version", "version_number",
+    "is_valid_checksum",
+    "CharacterVisualProfile", "LocationVisualProfile", "PropVisualProfile", "StyleProfile",
+    "PROFILE_CLASSES", "new_profile", "normalize_profile_fields",
+    "ReferenceImage", "VisualAssetVersion", "VisualAsset",
+    "DECISION_APPROVED", "DECISION_APPROVED_WITH_EDIT", "DECISION_REJECTED",
+    "VisualRegistryError", "sha256_of_file", "VisualAssetRegistry",
+    "VisualComposer", "ComposedVisualInput", "VisualComposeError",
     # token_log
     "TokenUsage", "estimate_cost", "LLMCallRecord", "compute_prompt_hash",
     "new_request_id", "now_iso", "TokenLogger",

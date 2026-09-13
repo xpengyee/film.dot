@@ -25,6 +25,10 @@ from llm.providers.mock import (
     MockEmbeddingProvider,
 )
 from llm.providers.openai_compatible import OpenAICompatibleTextProvider
+from llm.providers.openai_compatible_vision import (
+    OpenAICompatibleVisionProvider,
+    OpenAICompatibleMultimodalProvider,
+)
 from llm.providers.bailian import BailianTextProvider
 from llm.providers.registry import (
     create_provider,
@@ -49,6 +53,8 @@ __all__ = [
     "MockMultimodalProvider",
     "MockEmbeddingProvider",
     "OpenAICompatibleTextProvider",
+    "OpenAICompatibleVisionProvider",
+    "OpenAICompatibleMultimodalProvider",
     "BailianTextProvider",
     "create_provider",
     "get_default_provider",

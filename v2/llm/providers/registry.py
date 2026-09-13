@@ -77,17 +77,11 @@ def create_provider(
     if kind == "vision":
         if vendor == "mock":
             return MockVisionProvider()
-        raise ValueError(
-            f"create_provider(kind='vision', vendor={vendor!r})：Stage 9 未实现真实"
-            f"视觉 Provider（百炼视觉只立了接口位）。请用 vendor='mock'。"
-        )
+        return _create_real_image_provider(vendor, kind="vision", cfg=cfg)
     if kind == "multimodal":
         if vendor == "mock":
             return MockMultimodalProvider()
-        raise ValueError(
-            f"create_provider(kind='multimodal', vendor={vendor!r})：Stage 9 未实现真实"
-            f"多模态 Provider。请用 vendor='mock'。"
-        )
+        return _create_real_image_provider(vendor, kind="multimodal", cfg=cfg)
     if kind == "embedding":
         if vendor == "mock":
             return MockEmbeddingProvider()
@@ -122,6 +116,53 @@ def _create_text_provider(vendor: Optional[str], *, cfg: Optional[dict]) -> Prov
 def _text_vendors() -> set:
     return {c["vendor"] for name, c in PROVIDERS.items()
             if name.endswith("_text") and c.get("kind") == "text"}
+
+
+def _image_kinds() -> set:
+    return {c["vendor"] for name, c in PROVIDERS.items()
+            if name.endswith("_vision") and c.get("kind") == "vision"}
+
+
+def _create_real_image_provider(vendor: Optional[str], *, kind: str,
+                                cfg: Optional[dict]) -> Provider:
+    """真实视觉/多模态 Provider（Stage 10-B）：厂商差异 = Config 档。
+
+    护栏（stage10_plan §23）：
+        - 未登记厂商 / default_model 为空 → 明确报错（不硬编码模型名，
+          不静默退回 mock 造成"以为真调了"的错觉）；
+        - 构造成功 ≠ 会发请求；每个真实 HTTP 请求仍受 APIRequestCounter
+          预算硬上限（vision=3）保护。
+    """
+    from llm.providers.openai_compatible_vision import (
+        OpenAICompatibleVisionProvider, OpenAICompatibleMultimodalProvider,
+    )
+    vendor = (vendor or "").lower()
+    if not vendor or vendor == "mock":
+        raise ValueError(f"create_provider(kind={kind!r})：vendor 不能为空/mock（mock 请走 kind='vision', vendor='mock'）。")
+    if vendor not in _image_kinds():
+        raise ValueError(
+            f"未知视觉 vendor: {vendor!r}。支持 {sorted(_image_kinds() | {'mock'})}。")
+    conf = dict(cfg) if cfg else get_provider_config(f"{vendor}_vision")
+    model = str(conf.get("default_model", "") or "")
+    if not model:
+        raise ValueError(
+            f"config.PROVIDERS['{vendor}_vision']['default_model'] 为空：真实视觉调用前"
+            f"请在 Config 填入具体 VLM 模型名（不硬编码），或显式传 cfg 覆盖。")
+    base_url = str(conf.get("base_url", "") or "")
+    if not base_url:
+        raise ValueError(f"config.PROVIDERS['{vendor}_vision']['base_url'] 为空。")
+    api_key = load_provider_api_key(vendor)
+    if not api_key:
+        raise ValueError(
+            f"vendor={vendor!r} 的 API key 未配置（环境变量 "
+            f"{conf.get('api_key_env', '')}）。真实视觉调用需要先配置密钥。")
+    cls = OpenAICompatibleMultimodalProvider if kind == "multimodal" else OpenAICompatibleVisionProvider
+    return cls(
+        api_key=api_key,
+        base_url=base_url,
+        model=model,
+        vendor=vendor,
+    )
 
 
 # ---------------------------------------------------------------------------

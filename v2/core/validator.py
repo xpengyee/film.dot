@@ -999,6 +999,267 @@ class StoryboardValidator:
         return self.validate(sb)
 
 
+# ---------------------------------------------------------------------------
+# Visual Asset 校验器（阶段 10：视觉资产身份/版本/档案的确定性校验）
+# ---------------------------------------------------------------------------
+# 说明：
+#   - 与 CastingValidator / StoryboardValidator 同一模式：纯追加、复用
+#     ValidationError / format_errors，不另起错误体系，0 改既有校验器。
+#   - 只做"数据形态"校验（词表/格式/必填/指针一致性）；状态"转移"由
+#     VisualAssetRegistry 在变更时按 LEGAL_STATUS_TRANSITIONS 强制——
+#     版本状态只有当前值、无历史，转移合法性属于写路径的职责。
+#   - 必填字段门槛：draft 允许不完整；reviewing/approved 必须字段齐全
+#     （stage10_plan §4~§7 的 per-kind 必填项）。
+class VisualAssetValidator:
+    """视觉资产的确定性校验（纯规则，不调 LLM）。
+
+    检查（stage10_plan §23）：
+        1. kind / asset_id / version / status / source / purpose 受控词表与格式
+        2. per-kind 必填字段（对 reviewing/approved 版本强制；draft 放行）
+        3. 参考图 path 非空 + checksum 形如 sha256（64 hex）
+        4. 指针一致性：current_version 必须指向存在的版本；有 approved 时必须
+           指向"最新 approved"；无 approved 时指向最新版本或空
+        5. 生效唯一：同一资产至多 1 个 approved 版本（其余必须已 superseded）
+        6. 资产退役一致：archived=True 时全部版本应为 archived
+        7. validate_registry()：跨资产查 asset_id / (kind,name) 唯一
+    """
+
+    def validate(self, asset, *, path: str = "visual_asset") -> List[ValidationError]:
+        """校验一个 VisualAsset（或其 to_dict() 形态——自动识别）。"""
+        if isinstance(asset, dict):
+            from .visual import VisualAsset as _VA
+            try:
+                asset = _VA.from_dict(asset)
+            except Exception as exc:
+                return [ValidationError(
+                    validator="VisualAssetValidator", code="WRONG_TYPE",
+                    path=path, message=f"无法把 dict 解析成 VisualAsset: {exc}",
+                    actual="dict", expected="VisualAsset dict",
+                )]
+        errors: List[ValidationError] = []
+        from .visual import (
+            VISUAL_ASSET_KINDS, VISUAL_VERSION_STATUSES, VISUAL_SOURCES,
+            REFERENCE_PURPOSES, REFERENCE_IMAGE_KINDS,
+            is_valid_asset_id, is_valid_version,
+            version_number, is_valid_checksum,
+        )
+
+        a = path
+        # ---- 1. 身份 ----
+        if asset.kind not in VISUAL_ASSET_KINDS:
+            errors.append(ValidationError(
+                validator="VisualAssetValidator", code="INVALID_KIND",
+                path=f"{a}.kind", message="kind 不在视觉资产五类词表里。",
+                actual=asset.kind, expected=list(VISUAL_ASSET_KINDS),
+            ))
+            return errors
+        if not str(asset.name).strip():
+            errors.append(ValidationError(
+                validator="VisualAssetValidator", code="MISSING_FIELD",
+                path=f"{a}.name", message="资产名（语义锚点）不能为空。",
+                actual=asset.name, expected="non-empty str",
+            ))
+        if not is_valid_asset_id(asset.asset_id, asset.kind):
+            errors.append(ValidationError(
+                validator="VisualAssetValidator", code="INVALID_ASSET_ID",
+                path=f"{a}.asset_id",
+                message="asset_id 必须形如 PREFIX_001 且前缀与 kind 匹配。",
+                actual=asset.asset_id,
+                expected={"character": "CHAR_", "location": "LOC_", "prop": "PROP_",
+                          "style": "STYLE_", "reference": "REF_"}[asset.kind],
+            ))
+        if asset.kind == "reference" and asset.purpose and asset.purpose not in REFERENCE_PURPOSES:
+            errors.append(ValidationError(
+                validator="VisualAssetValidator", code="INVALID_PURPOSE",
+                path=f"{a}.purpose", message="reference 资产的 purpose 不在词表里。",
+                actual=asset.purpose, expected=list(REFERENCE_PURPOSES),
+            ))
+
+        # ---- 2. 版本 ----
+        if not isinstance(asset.versions, list) or not asset.versions:
+            errors.append(ValidationError(
+                validator="VisualAssetValidator", code="MISSING_FIELD",
+                path=f"{a}.versions", message="资产至少要有 1 个版本。",
+                actual=asset.versions, expected="non-empty list",
+            ))
+            return errors
+
+        seen_versions = set()
+        approved_versions = []
+        for i, ver in enumerate(asset.versions):
+            vp = f"{a}.versions[{i}]"
+            if not is_valid_version(ver.version):
+                errors.append(ValidationError(
+                    validator="VisualAssetValidator", code="INVALID_VERSION",
+                    path=f"{vp}.version", message="版本号必须是 v1/v2/…（^v\\d+$）。",
+                    actual=ver.version, expected=r"^v\d+$",
+                ))
+                continue
+            if ver.version in seen_versions:
+                errors.append(ValidationError(
+                    validator="VisualAssetValidator", code="DUPLICATE_VERSION",
+                    path=f"{vp}.version", message="版本号重复（版本绝不复用）。",
+                    actual=ver.version, expected="unique versions",
+                ))
+            seen_versions.add(ver.version)
+            if ver.status not in VISUAL_VERSION_STATUSES:
+                errors.append(ValidationError(
+                    validator="VisualAssetValidator", code="INVALID_STATUS",
+                    path=f"{vp}.status", message="版本状态不在七态词表里。",
+                    actual=ver.status, expected=list(VISUAL_VERSION_STATUSES),
+                ))
+            if ver.source and ver.source not in VISUAL_SOURCES:
+                errors.append(ValidationError(
+                    validator="VisualAssetValidator", code="INVALID_SOURCE",
+                    path=f"{vp}.source", message="版本来源不在词表里。",
+                    actual=ver.source, expected=list(VISUAL_SOURCES),
+                ))
+            if ver.status == "approved":
+                approved_versions.append(ver)
+            # ---- per-kind 必填字段（审批门槛；draft/generated 允许不完整）----
+            if ver.profile is not None and ver.status in ("reviewing", "approved"):
+                for fld in ver.profile.missing_required():
+                    errors.append(ValidationError(
+                        validator="VisualAssetValidator", code="MISSING_FIELD",
+                        path=f"{vp}.profile.{fld}",
+                        message=f"{asset.kind} 档案必填字段为空（{ver.status} 版本必须完整）。",
+                        actual="", expected="non-empty str",
+                    ))
+            # ---- 参考图 ----
+            for j, ref in enumerate(ver.reference_images):
+                rp = f"{vp}.reference_images[{j}]"
+                if not str(ref.path).strip():
+                    errors.append(ValidationError(
+                        validator="VisualAssetValidator", code="MISSING_FIELD",
+                        path=f"{rp}.path", message="参考图路径不能为空。",
+                        actual=ref.path, expected="non-empty str",
+                    ))
+                if ref.kind not in REFERENCE_IMAGE_KINDS:
+                    errors.append(ValidationError(
+                        validator="VisualAssetValidator", code="INVALID_REFERENCE",
+                        path=f"{rp}.kind", message="参考图 kind 不在词表里。",
+                        actual=ref.kind, expected=list(REFERENCE_IMAGE_KINDS),
+                    ))
+                if ref.checksum and not is_valid_checksum(ref.checksum):
+                    errors.append(ValidationError(
+                        validator="VisualAssetValidator", code="INVALID_CHECKSUM",
+                        path=f"{rp}.checksum", message="checksum 必须是 64 位十六进制（sha256）。",
+                        actual=ref.checksum, expected="sha256 hex (64)",
+                    ))
+
+        # ---- 3. 指针一致性 / 生效唯一 ----
+        if asset.current_version and asset.current_version not in seen_versions:
+            errors.append(ValidationError(
+                validator="VisualAssetValidator", code="UNKNOWN_VERSION",
+                path=f"{a}.current_version",
+                message="current_version 指向不存在的版本。",
+                actual=asset.current_version, expected=sorted(seen_versions),
+            ))
+        if approved_versions:
+            latest_approved = max(approved_versions, key=lambda v: version_number(v.version))
+            if len(approved_versions) > 1:
+                others = [v.version for v in approved_versions if v is not latest_approved]
+                for v in approved_versions:
+                    if v is latest_approved:
+                        continue
+                    errors.append(ValidationError(
+                        validator="VisualAssetValidator", code="DUPLICATE_ACTIVE",
+                        path=f"{a}.versions",
+                        message="同一资产同时存在多个 approved 版本"
+                                f"（{others} 应已转 superseded）。",
+                        actual=[v.version for v in approved_versions],
+                        expected="at most one approved",
+                    ))
+            if (asset.current_version
+                    and asset.current_version != latest_approved.version
+                    and latest_approved.status == "approved"):
+                errors.append(ValidationError(
+                    validator="VisualAssetValidator", code="INVALID_STATE",
+                    path=f"{a}.current_version",
+                    message="存在 approved 版本时 current_version 必须指向最新 approved。",
+                    actual=asset.current_version, expected=latest_approved.version,
+                ))
+        # ---- 4. 退役一致 ----
+        if asset.archived:
+            for i, ver in enumerate(asset.versions):
+                if ver.status != "archived":
+                    errors.append(ValidationError(
+                        validator="VisualAssetValidator", code="INVALID_STATE",
+                        path=f"{a}.versions[{i}].status",
+                        message="资产已退役（archived）时全部版本应为 archived。",
+                        actual=ver.status, expected="archived",
+                    ))
+        return errors
+
+    def validate_registry(self, registry) -> List[ValidationError]:
+        """跨资产校验：逐资产 validate + asset_id / (kind,name) 全局唯一。
+
+        注意 asset_id 唯一性按**各资产内部的 asset_id 值**判定——registry 的
+        字典键本身不会重复，真正要防的是"两个条目内部 ID 撞车"（键≠内容）。
+        """
+        errors: List[ValidationError] = []
+        seen_ids, seen_names = set(), set()
+        for key, asset in sorted((registry.assets or {}).items()):
+            errors.extend(self.validate(asset, path=f"visual_assets[{key}]"))
+            if asset.asset_id != key:
+                errors.append(ValidationError(
+                    validator="VisualAssetValidator", code="INVALID_ASSET_ID",
+                    path=f"visual_assets[{key}].asset_id",
+                    message="registry 键与资产 asset_id 不一致。",
+                    actual=asset.asset_id, expected=key,
+                ))
+            if asset.asset_id in seen_ids:
+                errors.append(ValidationError(
+                    validator="VisualAssetValidator", code="DUPLICATE_ASSET_ID",
+                    path=f"visual_assets[{key}].asset_id",
+                    message="asset_id 在 registry 内重复。",
+                    actual=asset.asset_id, expected="unique asset ids",
+                ))
+            seen_ids.add(asset.asset_id)
+            name_key = (asset.kind, asset.name)
+            if name_key in seen_names:
+                errors.append(ValidationError(
+                    validator="VisualAssetValidator", code="DUPLICATE_NAME",
+                    path=f"visual_assets[{key}].name",
+                    message=f"(kind, name) 绑定重复：{name_key}。",
+                    actual=name_key, expected="unique (kind, name)",
+                ))
+            seen_names.add(name_key)
+        return errors
+
+    def validate_profile_dict(self, kind: str, profile: dict, *,
+                              require_complete: bool = True,
+                              path: str = "profile") -> List[ValidationError]:
+        """校验一个（Agent 产出/落盘前的）profile dict——Step.validate 用。
+
+        require_complete=True 时按"即将送审的完整草稿"门槛检查 per-kind 必填；
+        LLM 多出的未知键不算错误（normalize 会丢弃），但缺失必填算错误。
+        """
+        from .visual import PROFILE_CLASSES, VISUAL_ASSET_KINDS
+        errors: List[ValidationError] = []
+        if kind not in VISUAL_ASSET_KINDS:
+            errors.append(ValidationError(
+                validator="VisualAssetValidator", code="INVALID_KIND",
+                path=f"{path}.kind", message="kind 不在视觉资产五类词表里。",
+                actual=kind, expected=list(VISUAL_ASSET_KINDS),
+            ))
+            return errors
+        cls = PROFILE_CLASSES.get(kind)
+        if cls is None:      # reference 无 profile 结构
+            return errors
+        profile = profile if isinstance(profile, dict) else {}
+        if require_complete:
+            probe = cls.from_dict(profile)
+            for fld in probe.missing_required():
+                errors.append(ValidationError(
+                    validator="VisualAssetValidator", code="MISSING_FIELD",
+                    path=f"{path}.{fld}",
+                    message=f"{kind} 档案必填字段为空。",
+                    actual=profile.get(fld), expected="non-empty str",
+                ))
+        return errors
+
+
 __all__ = [
     "ValidationError",
     "format_errors",
@@ -1013,4 +1274,6 @@ __all__ = [
     "ShotValidator",
     "BeatValidator",
     "StoryboardValidator",
+    # 阶段 10 Visual Asset
+    "VisualAssetValidator",
 ]
