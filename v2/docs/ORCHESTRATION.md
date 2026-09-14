@@ -286,6 +286,60 @@ cat v2/logs/stageN_*/real_*calls.jsonl                     # 核对调用次数�
   仓库根 `.gitignore` 属 V0.1 基线未含该规则 → **会泄漏到 git**。
   处理：从仓库根跑完测试后**必须删除根目录 `llm_calls.jsonl`**（见 ROADMAP 技术债 T-1）。
 
+### 5.2 Stage 封存 SOP（每个阶段收尾都照此执行）
+
+> 由总控执行，**需用户明确批准 commit + tag**。已在 Stage 11 实操验证。
+
+```bash
+cd /d D:\AI\FilmAgent-main
+
+# ① 复位被回归重写的报告产物 —— ★ 6 个文件（不是 4 个）
+git checkout -- v2/logs/stage3_workflow_test/stage3_report.json \
+                v2/logs/stage3_workflow_test/stage3_console.txt \
+                v2/logs/stage4_memory_context_review_test/stage4_report.json \
+                v2/logs/stage4_memory_context_review_test/stage4_console.txt \
+                v2/logs/stage6_casting/stage6_report.json \
+                v2/logs/stage7_scene_generation/stage7_report.json
+
+# ② 删除记账泄漏
+rm -f llm_calls.jsonl v2/llm_calls.jsonl
+
+# ③ 预览 + 泄漏扫描（必须无 .jsonl / images/ / registry.json / tmp_* / .png / .pyc）
+git add -An v2/
+git add -An v2/ | grep -iE "\.jsonl|images/|registry\.json|tmp_|\.png|\.jpg|\.pyc"
+
+# ④ 冻结与范围核实（全部必须为 0）
+git diff --stat -- FilmAgent/ ; git diff --stat -- .gitignore
+git diff --stat -- v2/workflow/ ; git diff --stat -- v2/core/ ; git diff --stat -- v2/llm/
+git status --short              # 仅含本阶段预期文件
+
+# ⑤ 提交 + 打 tag（★ 需用户批准）
+git add CLAUDE.md v2/ && git commit -F - <<'EOF'
+feat(v0.2): <stage description> (stageN)
+...（正文写清新增/修改/冻结/真实API消耗）
+EOF
+git tag v0.2-stageN
+
+# ⑥ 收尾自检
+git status --short              # 必须空
+git rev-parse v0.2-stageN^{commit}
+```
+
+**★ 文档措辞铁律（Stage 11 踩过的坑）**：
+
+> **永久文档不要描述"提交前"的瞬时状态。**
+> 若在 commit 前把文档写成"Stage N 尚未 commit / 待收尾动作…"，
+> 那么**打上 tag 之后，tag 所指向的那个 commit 里的文档就变成错的** ——
+> 读者 checkout 该 tag 会看到"未封存"。
+>
+> 正确写法：直接写阶段结果（"Stage N 完成并封存；`git rev-parse v0.2-stageN` 查精确 hash"），
+> 用 **tag 名查 hash** 而非写死 hash（避免自引用悖论）。
+> "待 commit" 这类瞬时状态**只应活在对话里，不进永久文档**。
+>
+> 若已发生：**不移动 tag**（铁律），改用 fix-forward —— 新增一个
+> `docs: mark stageN sealed` commit 修正文档，并在 commit message 里
+> **显式记录**"tag 所在 commit 仍写 pending、tag 未移动"。不要掩盖。
+
 ---
 
 ## 6. 回答用户的固定结构
