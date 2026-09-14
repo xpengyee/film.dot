@@ -5,13 +5,20 @@
 ## 1. 当前状态
 
 ```text
-当前状态：V0.2 Stage 10（Visual Asset Layer）已完成并封存
+当前状态：V0.2 Stage 11（StoryboardAgent）代码与测试已完成
+          ⚠️ **尚未 commit、尚未打 tag**（增量仍在工作区，见下方"待收尾动作"）
 最近稳定版本：v0.2-stage10 = c8a3ed8282a767c3119ea29e012e7b8148d3ab3b
-最近 commit：c8a3ed8 feat(v0.2): visual asset layer (stage10)
-下一阶段：Stage 11
-Stage 11：开工指令**已就位** —— D:\AI\FilmAgent\v0.2开工指令11
-          （StoryboardAgent：Scene → Storyboard → Beat → Shot）
+最近 commit：dc335a7 docs: migrate session workflow from Claude Code to WorkBuddy
+下一阶段：Stage 12
+Stage 12：Project 生命周期 + 第一条完整业务链（Casting → Scene → Storyboard → 组装 → 审核）
+          开工指令：`D:\AI\FilmAgent\v0.2开工指令12`（已生成）
 开工方式：**新开一个 WorkBuddy 会话**（不要用 `claude` CLI，见 §4）
+
+### 待收尾动作（Stage 11 封存，需人工批准）
+1. 复位被回归重写的报告产物（6 个文件，见 §5）
+2. rm -f llm_calls.jsonl v2/llm_calls.jsonl
+3. git add v2/ && git commit -m "feat(v0.2): storyboard agent (stage11)"
+4. git tag v0.2-stage11        ← 需人工明确批准
 ```
 
 ## 2. Git 锚点
@@ -23,9 +30,11 @@ Stage 11：开工指令**已就位** —— D:\AI\FilmAgent\v0.2开工指令11
 | V0.2 Stage 8 Canonical Schema | `abf8e88a983f13c437abe2b719c920d3c5c3c144` | `v0.2-stage8` |
 | V0.2 Stage 9 Provider Architecture | `82a89b50d337663027e8ecd638f45d7b94eaa882` | `v0.2-stage9` |
 | V0.2 Stage 10 Visual Asset Layer | `c8a3ed8282a767c3119ea29e012e7b8148d3ab3b` | `v0.2-stage10` |
+| V0.2 Stage 11 StoryboardAgent | **待 commit**（增量在工作区未提交） | `v0.2-stage11`（待创建） |
 
 约束：`FilmAgent/` 0 diff；`v0.1` / `v0.2-stage7` / `v0.2-stage8` / `v0.2-stage9` /
-`v0.2-stage10` 五个 tag 永不移动；仓库根 `.gitignore` 0 diff。
+`v0.2-stage10` 五个 tag 永不移动（`v0.2-stage11` 待创建后同样永不移动）；
+仓库根 `.gitignore` 0 diff。
 
 ## 3. 协作规范（A/B/C/D 会话体系）
 
@@ -45,7 +54,7 @@ Stage 11：开工指令**已就位** —— D:\AI\FilmAgent\v0.2开工指令11
 - **跨会话记忆靠文档**：CLAUDE.md / PROJECT_STATUS.md / HANDOFF.md / Stage Report /
   Git；聊天记录不作为项目长期记忆。
 
-## 4. 新 WorkBuddy 会话（Stage 11）如何开始
+## 4. 新 WorkBuddy 会话（Stage 12）如何开始
 
 > **不要使用 `claude` CLI 或任何命令行 TUI 工具。** 本项目一律用 **WorkBuddy 会话**
 > 执行阶段（总控与执行分离见 `ORCHESTRATION.md` §1.1）。
@@ -58,39 +67,48 @@ Stage 11：开工指令**已就位** —— D:\AI\FilmAgent\v0.2开工指令11
    2. `v2/docs/PROJECT_STATUS.md`
    3. `v2/docs/HANDOFF.md`（本文件）
    4. `v2/docs/ORCHESTRATION.md`（总控工作方式 / 会话分工 / 铁律 / 环境陷阱）
-   5. 最近 Stage Report：`v2/logs/stage10_visual_asset/stage10_report.md`
-      （另见 `stage10_b_report.md` / `stage10_c_report.md`）
+   5. 最近 Stage Report：`v2/logs/stage11_storyboard/stage11_report.md`
    6. 当前 Git 状态：`git status --short`、`git log -5 --oneline`、
-      五个 tag 指向、`git diff -- FilmAgent/`
-   7. **Stage 11 开工指令**：`D:\AI\FilmAgent\v0.2开工指令11`
-   8. 与 Stage 11 直接相关的代码：`v2/core/shot.py`、`v2/core/validator.py`（Shot/Beat/
-      Storyboard 段）、`v2/agents/scene_generation.py`（接线范式）、
-      `v2/agents/base.py`、`v2/logs/stage10_visual_asset/run_tests.py`（测试风格与回归结构）
+      五个 tag 指向（`v0.2-stage11` 待创建）、`git diff -- FilmAgent/`
+   7. **Stage 12 开工指令**：`D:\AI\FilmAgent\v0.2开工指令12`（已生成）
+   8. 与 Stage 12 直接相关的代码：`v2/agents/`（四个业务 Agent）、
+      `v2/workflow/engine.py`、`v2/context/assembler.py`、`v2/memory/store.py`、
+      `v2/logs/stage11_storyboard/run_tests.py`（最新套件范式与回归结构）
 
 3. **开工自检**（指令 §3.1）：
 
    ```bash
    cd /d D:\AI\FilmAgent-main
-   env -u PYTHONPATH python v2/logs/stage10_visual_asset/run_tests.py   # 期望 76/76
+   env -u PYTHONPATH python v2/logs/stage11_storyboard/run_tests.py   # 期望 65/65
    git log --oneline -5 && git status --short && git diff -- FilmAgent/  # 期望干净
    ```
 
 ## 5. 给下一个会话的关键提醒
 
-- **Stage 11 开工指令已就位**：`D:\AI\FilmAgent\v0.2开工指令11`（StoryboardAgent）。
-  以指令文件为准推进；指令中未覆盖的设计冲突**立即暂停向总控报告**，不要自行决定。
+- **Stage 12 开工指令已生成**：`D:\AI\FilmAgent\v0.2开工指令12`。
+  未覆盖的设计冲突**立即暂停向总控报告**，不要自行决定。
+- **Stage 11 的裁决已出（总控，2026-09-14）**：`normalize_storyboard()` 的两条防御性回锚
+  （`actions` / `assets` 引用回锚）**予以批准**——属必要补全，非扩大范围。
+  详见 `v2/docs/stages/stage11_plan.md` §9。
+- **Stage 11 暴露的调度缺口**：`inputs["scene"]`（裁决 S-A）只支持单 scene/run；
+  同一 workflow 内多场景需要 Stage 12 设计"跨场景取 scene"的调度机制。
 - 一切新工作只进 `v2/`；`FilmAgent/`（V0.1）永不修改；仓库根 `.gitignore` 也不动
   （运行产物忽略规则只在 `v2/.gitignore`）。
 - API key 绝不硬编码、绝不进日志/异常/报告；只显示脱敏（`config.mask_api_key`）。
 - Stage 9 约定：业务 Agent 只认抽象 `Provider`（`v2/llm/providers/`），
   Agent / Router / Provider / Model 职责边界见 `PROJECT_STATUS.md` §5。
-- **Stage 10 约定（Stage 11 必须延续）**：语义与视觉分离 ——
+- **Stage 10 约定（Stage 11+ 必须延续）**：语义与视觉分离 ——
   Shot **只存名字级引用 + 本镜头视觉增量**，**绝不**把角色外貌 / 地点环境写进 Shot；
   那些活在 `VisualAssetRegistry`，由 `VisualComposer` 在调用模型前一次性展开。
   硬证据：注册视觉资产前后 `Storyboard.to_dict()` **逐字节不变**。
+- **Stage 11 约定（Stage 12+ 必须延续）**：受控词表**从 `core.shot` 常量渲染**（不手抄进 prompt）；
+  warnings 统一放 `Storyboard.metadata["normalize_warnings"]`；Scene 经 `inputs` 传入，Agent 不读磁盘。
 - Mock 优先，真实 API 只走独立 `run_real_*.py` 脚本（默认 `FILMAGENT_PROVIDER=mock` → 0 API）。
 - **跑测试务必加 `env -u PYTHONPATH`**（宿主注入 `sitecustomize` shim 劫持
   `shutil.rmtree` → 历史套件假失败，见 `ORCHESTRATION.md` §5.1）。
 - **从仓库根跑完测试后必须删除根目录 `llm_calls.jsonl`**（`v2/llm/client.py` 默认写 cwd）。
+- **复位清单是 6 个文件**（不是 4 个）：`stage3_report.json` / `stage3_console.txt` /
+  `stage4_report.json` / `stage4_console.txt` / `stage6_report.json` / `stage7_report.json`
+  —— 跑 stage8/9/10/11 的嵌套回归会连带重写 stage3 的两个产物（技术债 T-6 的新增面）。
 - 每阶段完成即停下等人工验收：不自动 commit/tag、不自动进入下一阶段。
 - 测试约定、依赖方向、V0.1-freeze 断言见 `CLAUDE.md`。

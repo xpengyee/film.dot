@@ -1,0 +1,65 @@
+{
+  "scene information": {
+    "who": ["Caleb", "Ivy", "Theo"],
+    "where": "Apartment living room",
+    "what": "Theo, estranged from the group for three years, receives a surprise visit from Caleb and Ivy. They invite him to a small reunion for Mercy, who is seriously ill. The room is tense; Theo keeps his distance by the window and refuses to be guilt-tripped, but he does not say no."
+  },
+  "initial position": [
+    {"character": "Caleb", "position": "Position 1"},
+    {"character": "Ivy", "position": "Position 2"},
+    {"character": "Theo", "position": "Position 3"}
+  ],
+  "scene": [
+    {
+      "speaker": "Ivy",
+      "content": "Theo, we are not here to argue. Mercy asked to see all of us one last time.",
+      "actions": [
+        {"character": "Ivy", "state": "sitting", "action": "Sitting Talking"}
+      ],
+      "shot": "Mid Shot",
+      "current position": [
+        {"character": "Ivy", "position": "Position 2"}
+      ]
+    },
+    {
+      "speaker": "Theo",
+      "content": "You do not get to use Mercy as a guilt trip.",
+      "actions": [
+        {"character": "Theo", "state": "standing", "action": "Standing Angry"}
+      ],
+      "shot": "Close Shot",
+      "current position": [
+        {"character": "Theo", "position": "Position 3"}
+      ]
+    },
+    {
+      "move": {"character": "Theo", "destination": "Position 4"},
+      "shot": "Long Shot",
+      "current position": [
+        {"character": "Theo", "position": "Position 4"}
+      ]
+    },
+    {
+      "speaker": "Caleb",
+      "content": "I am sorry for what we did. All of it.",
+      "actions": [
+        {"character": "Caleb", "state": "standing", "action": "Standing Depressed"}
+      ],
+      "shot": "Mid Shot",
+      "current position": [
+        {"character": "Caleb", "position": "Position 1"}
+      ]
+    },
+    {
+      "speaker": "Theo",
+      "content": "I will come. Not for you. For her.",
+      "actions": [
+        {"character": "Theo", "state": "standing", "action": "Standing Normal"}
+      ],
+      "shot": "Close Shot",
+      "current position": [
+        {"character": "Theo", "position": "Position 4"}
+      ]
+    }
+  ]
+}

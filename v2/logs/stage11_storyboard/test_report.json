@@ -1,0 +1,333 @@
+{
+  "suite": "stage11_storyboard",
+  "real_api_requests": 0,
+  "results": [
+    {
+      "name": "T01a needs 与 SceneGenerationAgent 同集合",
+      "ok": true,
+      "detail": "needs=['project_info', 'approved_facts', 'characters', 'locations', 'actions', 'shots']"
+    },
+    {
+      "name": "T01b user payload 含全部受控词表取值（从 core.shot 渲染）",
+      "ok": true,
+      "detail": "missing=[]"
+    },
+    {
+      "name": "T01c step_id / name / agent.name 命名规范",
+      "ok": true,
+      "detail": "step_id=storyboard_generation_1; name=storyboard_generation"
+    },
+    {
+      "name": "T01d prompt 只放角色设定 + JSON 契约（不含手抄词表）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T01e prompt 词表与 core.shot 不一致 → StepError（防漂移护栏）",
+      "ok": true,
+      "detail": "got=StepError(\"prompt 内受控词表 SHOT_SIZES 与 core.shot 常量不一致：prompt='SHOT_SIZES = WS, MS, CU' / 期望='SHOT_SIZES = WS, MS, MCU, CU, ECU'（词表唯一事实来源是 core.shot）\")"
+    },
+    {
+      "name": "T01f 真实 prompt 通过词表一致性自检",
+      "ok": true,
+      "detail": "got=None"
+    },
+    {
+      "name": "T02a Agent 可被正常初始化（只探 needs 不调 LLM）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02b StoryboardStep 未注入 agent → ValueError",
+      "ok": true,
+      "detail": "got=ValueError('StoryboardStep 必须注入业务 Agent')"
+    },
+    {
+      "name": "T02c 缺 prompt 文件 → StepError（可重试）",
+      "ok": true,
+      "detail": "got=StepError(\"读取 StoryboardAgent Prompt 失败 D:\\\\AI\\\\FilmAgent-main\\\\v2\\\\logs\\\\stage11_storyboard\\\\tmp_projects\\\\no_such_prompt.txt: [Errno 2] No such file or directory: 'D:\\\\\\\\AI\\\\\\\\FilmAgent-main\\\\\\\\v2\\\\\\\\logs\\\\\\\\stage11_storyboard\\\\\\\\tmp_projects\\\\\\\\no_such_prompt.txt'\")"
+    },
+    {
+      "name": "T03a mock 合法 JSON → Storyboard（beats/shots 结构正确）",
+      "ok": true,
+      "detail": "beats=2; shots=3"
+    },
+    {
+      "name": "T03b flatten_shots() 保序且 shot_id 连续",
+      "ok": true,
+      "detail": "ids=[1, 2, 3]"
+    },
+    {
+      "name": "T03c 产出通过 StoryboardValidator（0 错误）",
+      "ok": true,
+      "detail": "errors=[]"
+    },
+    {
+      "name": "T04 越界值全部被规范化兜底（MS/eye_level/static/single/general）+ warning",
+      "ok": true,
+      "detail": "shot_size=MS; kind=general; w=6"
+    },
+    {
+      "name": "T04 规范化不抛异常且 ShotValidator 全过",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T04b shot_type：已注册名/受控景别保留，自由文本清空（R1 专测）",
+      "ok": true,
+      "detail": "shot_type=['Close Shot', 'MS', '', '']; warnings=2"
+    },
+    {
+      "name": "T04b 清空后 ShotValidator 无 INVALID_SHOT_TYPE",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05 编造角色被剔除 / 非法地点回锚 scene.where + warning",
+      "ok": true,
+      "detail": "characters=['Mercy']; location=Apartment living room"
+    },
+    {
+      "name": "T05b positioning 非法站位点/编造角色被剔除 + warning（R6 专测）",
+      "ok": true,
+      "detail": "positioning=[{'character': 'Mercy', 'position': 'Position 1'}]"
+    },
+    {
+      "name": "T05b 剔除后 ShotValidator 无 INVALID_POSITION",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06 跳号/重复 id 被重排为连续递增（无 DUPLICATE_*）",
+      "ok": true,
+      "detail": "beat_id=[1, 2, 3]; shot_id=[1, 2, 3]; dup=[]"
+    },
+    {
+      "name": "T07 duration 缺失/<=0 按 kind 兜底；合理值保留",
+      "ok": true,
+      "detail": "durations=[3.0, 2.5, 2.0, 4.5]"
+    },
+    {
+      "name": "T07b dialogue 台词补不齐 → 降级 general 且无 MISSING_FIELD（R5 专测）",
+      "ok": true,
+      "detail": "kind=general; miss=[]"
+    },
+    {
+      "name": "T08 所有产出 Shot.status 被强制为 planned",
+      "ok": true,
+      "detail": "status=['planned', 'planned']"
+    },
+    {
+      "name": "T09a Step 从 inputs 派发 spec；artifact_name=storyboard_1；审核通过",
+      "ok": true,
+      "detail": "status=APPROVED; files=['storyboard_1.json']"
+    },
+    {
+      "name": "T09b 落盘产物是合法 Storyboard（metadata.episode 来自 spec）",
+      "ok": true,
+      "detail": "scene_id=1; episode=2"
+    },
+    {
+      "name": "T09c 缺 inputs['scene'] → StepError（不静默产出空 Storyboard）",
+      "ok": true,
+      "detail": "got=StepError(\"StoryboardStep 需要 context.inputs['scene']（Scene 对象或其 to_v01() dict）；调度层必须先把它放进 inputs，绝不静默产出空 Storyboard\")"
+    },
+    {
+      "name": "T09d 多场景 step_id 独立、产物不串场",
+      "ok": true,
+      "detail": "ids=(storyboard_generation_1,storyboard_generation_2); f2=['storyboard_2.json']; cross=[]"
+    },
+    {
+      "name": "T10a validate() 对无法解析的 dict 返回错误列表（不抛异常）",
+      "ok": true,
+      "detail": "got=[\"[StoryboardValidator] WRONG_TYPE at storyboard\\n  无法把 dict 解析成 Storyboard: invalid literal for int() with base 10: 'not-an-int'\\n  actual  : 'dict'\\n  expected: Storyboard dict\"]"
+    },
+    {
+      "name": "T10b validate() 对缺 speaker/dialogue 的产出返回 MISSING_FIELD（非异常）",
+      "ok": true,
+      "detail": "got=['[ShotValidator] MISSING_FIELD at storyboard.beats[0].shots[0].speaker\\n  dialogue 镜头必须有非空 speaker。\\n  expected: non-empty str', '[ShotValidator] MISSING_FIELD at storyboard.beats[0].shots[0].dialogue\\n  dialogue 镜头必须有非空台词。\\n  expected: non-empty str']"
+    },
+    {
+      "name": "T10c validate() 对合法产出返回空列表",
+      "ok": true,
+      "detail": "got=[]"
+    },
+    {
+      "name": "T11 重试生成新版本、原文件不动（双版本并存）",
+      "ok": true,
+      "detail": "status=APPROVED; files=['storyboard_1.json', 'storyboard_1_v2.json']; attempts=2"
+    },
+    {
+      "name": "T12a Review APPROVED → 继续（下游执行）",
+      "ok": true,
+      "detail": "run=success"
+    },
+    {
+      "name": "T12b Review APPROVED_WITH_EDIT → 新版本、原文件保留",
+      "ok": true,
+      "detail": "files=['storyboard_1.json', 'storyboard_1_v2.json']"
+    },
+    {
+      "name": "T12c Review REJECTED → 停止（下游不执行）",
+      "ok": true,
+      "detail": "run=failed"
+    },
+    {
+      "name": "T13 三次全非法 → FAILED（3 次耗尽），不静默成功、不落盘",
+      "ok": true,
+      "detail": "status=FAILED; attempts=3; calls=3"
+    },
+    {
+      "name": "T14 真实 API = 0（程序化快照断言）；mock 调用已计数",
+      "ok": true,
+      "detail": "real=0; mock=1"
+    },
+    {
+      "name": "T18a 空 registry → VisualComposeError（明确报错，不静默）",
+      "ok": true,
+      "detail": "got=VisualComposeError('镜头 S1_B1_SH1 无法解析项目默认风格（style_override / default_style_asset_id / 唯一 approved STYLE 均缺失）。')"
+    },
+    {
+      "name": "T18b 注册视觉资产前后 Storyboard.to_dict() 逐字节不变（Token 硬证据）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18c 视觉档案未渗漏进 Storyboard（无角色外貌/地点环境字段）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18d 名字引用可被 VisualComposer 解析并展开（profile 进入 render_prompt）",
+      "ok": true,
+      "detail": "asset_id=CHAR_001"
+    },
+    {
+      "name": "T15a 空 registry + allow_partial=True → 不抛异常，gaps 记录角色/地点/风格缺口",
+      "ok": true,
+      "detail": "gaps=['character:Mercy', 'location:Apartment living room', 'style:default']"
+    },
+    {
+      "name": "T15b 全 registry → 角色/地点名字引用均被解析（无缺口，链路可通）",
+      "ok": true,
+      "detail": "loc=LOC_001; gaps=[]"
+    },
+    {
+      "name": "T20a inputs['scene'] 允许是 Scene.to_v01() dict",
+      "ok": true,
+      "detail": "scene_id=1"
+    },
+    {
+      "name": "T20b inputs['scene'] 类型非法 → StepError",
+      "ok": true,
+      "detail": "got=StepError(\"inputs['scene'] 必须是 Scene 或其 to_v01() dict，实际 int\")"
+    },
+    {
+      "name": "T20c 结构非法（raw 非 dict / beats 非 list / 全非 dict）→ StepError",
+      "ok": true,
+      "detail": "('StepError', 'StepError', 'StepError')"
+    },
+    {
+      "name": "T20d shot.location 留空 → 保持空串（继承 Scene 地点）且校验通过",
+      "ok": true,
+      "detail": "location=''"
+    },
+    {
+      "name": "T20e 上游 who 含未登记角色 → 明确报 UNKNOWN_CHARACTER（fail-loud，不静默丢角色）",
+      "ok": true,
+      "detail": "errors=['[StoryboardValidator] UNKNOWN_CHARACTER at storyboard.characters[1]', '[StoryboardValidator] UNKNOWN_CHARACTER at storyboard.initial_positions[1].character']"
+    },
+    {
+      "name": "T20f 空 Beat 被跳过（beat_id 重排连续）+ warning",
+      "ok": true,
+      "detail": "beats=1; warnings=6"
+    },
+    {
+      "name": "T20g prompt 词表护栏不误报（正确词表行 → 通过）",
+      "ok": true,
+      "detail": "got=None"
+    },
+    {
+      "name": "T20h inputs 缺 storyboard_spec → 用 {} 兜底仍产出 storyboard_1",
+      "ok": true,
+      "detail": "files=['storyboard_1.json']"
+    },
+    {
+      "name": "T20j 列表字段非列表 → warning + 按空处理（不静默）",
+      "ok": true,
+      "detail": "characters=[]; positioning=[]"
+    },
+    {
+      "name": "T20i agents/storyboard.py 只依赖 core/workflow/agents（依赖方向合规）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16a compileall 全过",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16b ASSET_KINDS 精确不变（stage8 封存前提）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16c import 冒烟 + 新导出齐备",
+      "ok": true,
+      "detail": "__all__=['LLMAgent', 'LLMStep', 'CastingAgent', 'CastingStep', 'SceneGenerationAgent', 'SceneGenerationStep', 'StoryboardAgent', 'StoryboardStep']"
+    },
+    {
+      "name": "T16d 新增文件无硬编码 key（sk- 字样一律扫描）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T17 禁改文件 0 diff（§8.3 硬清单 + FilmAgent/ + 仓库根 .gitignore）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19-stage1 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19-stage3 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19-stage4 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19-stage6 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19-stage7 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19-stage8 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19-stage9 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19-stage10 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "passed": 65,
+  "total": 65
+}

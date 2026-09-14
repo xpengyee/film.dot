@@ -17,11 +17,13 @@ V0.2 阶段 6 —— 业务 Agent 层（v2/agents/）
     base.py                LLMAgent / LLMStep 公共骨架（阶段 8 §十六）
     casting.py             CastingAgent（继承 LLMAgent）+ CastingStep（继承 LLMStep）
     scene_generation.py    SceneGenerationAgent（继承 LLMAgent）+ SceneGenerationStep（继承 LLMStep）
-未来 StoryboardAgent / ImageAgent / VideoAgent 继承 base 即可。
+    storyboard.py          StoryboardAgent（继承 LLMAgent）+ StoryboardStep（继承 LLMStep）
+未来 ImageAgent / VideoAgent 继承 base 即可。
 """
 from agents.base import LLMAgent, LLMStep
 from agents.casting import CastingAgent, CastingStep
 from agents.scene_generation import SceneGenerationAgent, SceneGenerationStep
+from agents.storyboard import StoryboardAgent, StoryboardStep
 
 __all__ = [
     "LLMAgent",
@@ -30,4 +32,6 @@ __all__ = [
     "CastingStep",
     "SceneGenerationAgent",
     "SceneGenerationStep",
+    "StoryboardAgent",
+    "StoryboardStep",
 ]

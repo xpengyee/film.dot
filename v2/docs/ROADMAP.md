@@ -3,7 +3,7 @@
 > 回答"后面要去哪、以及**为什么是这个顺序**"。总控据此判断下一阶段；
 > 执行会话不需要读本文件（读 `CLAUDE.md` + `HANDOFF.md` + 本阶段开工指令即可）。
 >
-> 最后更新：Stage 10-D 交付后（Stage 11 开工指令已就位，等待执行会话）。
+> 最后更新：Stage 11-D 交付后（Stage 12 开工指令待总控设计）。
 
 ---
 
@@ -20,7 +20,7 @@ V0.1 是"已跑通但不可维护的串行脚本"，V0.2 是"工程化的多智�
 ## 2. 路线图全景（当前视角）
 
 ```text
-                    ┌─── 已完成（Stage 0–10）────────────────────────────┐
+                    ┌─── 已完成（Stage 0–11）────────────────────────────┐
                     │ 0-1 骨架 / 数据模型 / Validator / Assets           │
                     │ 2   LLMClient / Token·Cost                         │
                     │ 3   Workflow Engine / Step / Artifact 版本化        │
@@ -31,10 +31,10 @@ V0.1 是"已跑通但不可维护的串行脚本"，V0.2 是"工程化的多智�
                     │ 8   Canonical Schema（Stage 架构核心架构定稿）       │
                     │ 9   Provider Architecture（模型调用解耦）           │
                     │ 10  Visual Asset 层（视觉身份 / 版本 / 参考图 / 组装）│
+                    │ 11  StoryboardAgent（Shot 规划：Scene→Beat→Shot）    │
                     └───────────────────────────────────────────────────┘
                      ↓ 当前位置
-                    ┌─── 规划中（Stage 11+）─────────────────────────────┐
-                    │ 11  StoryboardAgent（Shot 规划）  ← 已设计，待执行  │
+                    ┌─── 规划中（Stage 12+）─────────────────────────────┐
                     │ 12  Project 生命周期 + 第一条完整业务链             │
                     │ 13  Image Generation（真实出图 + VLM QA）           │
                     │ 14  Video Generation（图 → 视频）                   │
@@ -80,9 +80,14 @@ Stage 15 Audio / TTS               →  Stage 16 Assembly → V0.2.0-alpha
 ## 4. 当前格位
 
 ```text
-当前：Stage 10 已封存（v0.2-stage10）；Stage 11 开工指令已就位
-下一阶段：Stage 11 —— StoryboardAgent（`D:\AI\FilmAgent\v0.2开工指令11`）
-阻塞：无技术阻塞。可随时开新会话执行 Stage 11。
+当前：Stage 11 代码/测试完成（⚠️ **未 commit / 未 tag**，待人工验收封存）；无技术阻塞
+下一阶段：Stage 12 —— Project 生命周期 + 第一条完整业务链
+          开工指令：`D:\AI\FilmAgent\v0.2开工指令12`（已生成）
+阻塞：无技术阻塞。但 Stage 12 设计时**必须一并解决** Stage 11 暴露的两点：
+      ① 多场景调度缺口（`inputs["scene"]` 只支持单 scene/run，同 workflow 内 N 个
+         storyboard step 会读同一个 scene；**真实规模：每集 3 个场景**，故缺口必然触发）；
+      ② 上游 Scene 校验前置（`Scene.info.who` 与 `known_characters` 不一致时
+         Stage 11 会 fail-loud 到 FAILED —— 建议调度层先校验再喂）。
 ```
 
 ---
@@ -96,7 +101,7 @@ Stage 15 Audio / TTS               →  Stage 16 Assembly → V0.2.0-alpha
 | T-3 | 成本为 `null`（`PROVIDERS["bailian_vision"]["pricing"]=None` 护栏） | 真实视觉调用无成本记账 | 在 `config.PRICING` 登记 qwen3.7-plus 价格即可（无需改业务代码） | 已登记，未修 |
 | T-4 | 真实冒烟脚本 `run_real_visual_extraction.py` 未调用 `add_reference_image()` | 真实链路不落 checksum 锚点（0 API 本地测试 T06b 已完整证明该链路） | 可选增强，一行改动 | 已登记，未修 |
 | T-5 | 人工审核目前是程序化 decision 模拟，交互式审核界面未做 | 无法真人实操审核 | 待业务链打通后立项 | 已登记，未修 |
-| T-6 | `stage4/stage6/stage7_report.json` 每次回归都会被重写（含随机 id）产生 Git dirty | 交付前需 `git checkout --` 复位，易误提交 | 可让套件写固定/可复现 id，或把报告移出跟踪 | 已登记，未修（Stage 10-D 已按要求复位） |
+| T-6 | `stage3/stage4/stage6/stage7_report.json`（及 `stage3/stage4_console.txt`）每次回归都会被重写（含随机 id）产生 Git dirty | 交付前需 `git checkout --` 复位**6 个文件**，易误提交 | 可让套件写固定/可复现 id，或把报告移出跟踪 | 已登记，未修（Stage 11-D 已按要求复位 6 个文件；跑 stage8/9/10/11 的嵌套回归会连带重写 stage3 的两个产物） |
 
 ---
 
@@ -108,7 +113,7 @@ Stage 15 Audio / TTS               →  Stage 16 Assembly → V0.2.0-alpha
 ImageGenerationProvider / VideoGenerationProvider / AudioProvider   预留接口，调用即 NotImplementedError
 真实图片生成 / 真实视频生成 / TTS                                   未实现
 VLM QA Agent（生成图 vs 参考图对比）                                未实现（Visual Asset 已备好 ground truth）
-StoryboardAgent                                                    未实现（**Stage 11 目标，指令已就位**）
+StoryboardAgent                                                     ✅ **已实现（Stage 11）**：agents/storyboard.py
 向量库 / Embedding 检索接入                                        未做
 本地模型（Ollama / vLLM / 权重）                                   未下载、未部署
 交互式人工审核 UI / 数据库 / 生产部署                               未做
@@ -142,6 +147,7 @@ OpenAICompatibleVisionProvider（bailian 档）                       ✅ **已�
 | 0–9 | 0 | 0（测试） | ¥0.00 |
 | 10-B | **3**（qwen3.7-plus，14,433 tokens，Retry=0） | 0 | null（价格未登记，T-3） |
 | 10-C | 0 | 0 | ¥0.00 |
+| 11（A–D） | 0 | **0**（全 Mock；真实脚本已就位未执行） | ¥0.00 |
 
 ---
 
