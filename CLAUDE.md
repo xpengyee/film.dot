@@ -173,7 +173,8 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
 ## 当前状态与下一步
 
 - 当前阶段：V0.2 Stage 8 / 9 / 10 / 11 均 **PASS + 已封存**；
-  V0.2 Stage 12 **NOT STARTED**（尚未设计开工指令）。当前没有任何进行中的业务代码任务。
+  V0.2 Stage 12 **NOT STARTED**（开工指令已生成：`D:\AI\FilmAgent\v0.2开工指令12`）。
+  当前没有任何进行中的业务代码任务。
 - 权威状态文档：`v2/docs/PROJECT_STATUS.md`；给新会话的交接文档：`v2/docs/HANDOFF.md`；
   总控工作手册：`v2/docs/ORCHESTRATION.md`；路线图：`v2/docs/ROADMAP.md`。
 - Git：版本锚点 `v0.1` = `344c0c6…`、`v0.2-stage7` = `300aae4…`、`v0.2-stage8` = `abf8e88…`、
@@ -188,7 +189,7 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
 - 下一步：**新开一个 WorkBuddy 会话执行 Stage 12**（工作目录 `D:\AI\FilmAgent-main`；
   **不要用 `claude` CLI** → 读 CLAUDE.md → `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md`
   → `v2/docs/ORCHESTRATION.md` → 最近 Stage Report `stage11_report.md` → Git 状态
-  → Stage 12 开工指令（**待总控设计**）→ 相关代码）。
+  → Stage 12 开工指令 `D:\AI\FilmAgent\v0.2开工指令12` → 相关代码）。
   Stage 12 = **Project 生命周期 + 第一条完整业务链**（Casting → Scene → Storyboard → 组装 → 审核），
   为 Stage 13 真实出图做调度准备。
   路线图方向：第一集真实生成 → V0.2.0-alpha。

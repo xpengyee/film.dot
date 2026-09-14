@@ -17,12 +17,12 @@
 
 ```text
 当前版本：V0.2（重构版基础设施）
-当前阶段：StoryboardAgent 代码/测试完成 —— ⚠️ **尚未 commit、尚未打 tag（未封存）**
+当前阶段：StoryboardAgent 完成并封存 —— COMPLETE
 
 V0.2 Stage 8：PASS + 已封存
 V0.2 Stage 9：PASS + 已封存（Multi-Modal Provider Architecture）
 V0.2 Stage 10：PASS + 已封存（Visual Asset Layer）
-V0.2 Stage 11：PASS（代码/测试完成）—— ⚠️ 待人工验收后 commit + tag 封存
+V0.2 Stage 11：PASS + 已封存（StoryboardAgent：Scene → Storyboard → Beat → Shot）
 V0.2 Stage 12：NOT STARTED（Project 生命周期 + 第一条完整业务链；
               开工指令：`D:\AI\FilmAgent\v0.2开工指令12`）
 ```
@@ -42,7 +42,7 @@ V0.2 Stage 12：NOT STARTED（Project 生命周期 + 第一条完整业务链；
 | 8 | 完成 Canonical Schema：`Project → Scene → Beat → Shot → Asset`；建立 Shot / Beat / Storyboard / Asset / Adapter / Agent Base / 相关 Validator。Stage 8 测试 27/27 + 历史回归全绿 + V0.1 无损往返 + 0 次真实 LLM + 0 API 成本 | PASS + 已封存 |
 | 9 | 完成 Multi-Modal **Provider Architecture**：统一 Provider 接口族（Text/Vision/Multimodal/Embedding + 预留 Image/Video/Audio）+ Mock 四件套 + Registry/Factory + Router 真入口 + Config Provider 注册表（deepseek/bailian/local/vision/embedding 五档）+ Bailian 文本实现位 + `OpenAICompatibleTextProvider`。Agent / Router / Provider / Model 职责边界划清，业务 Agent 只认抽象 Provider。**C 会话发现并修复 1 个真实缺陷**：Mock Provider 写 TokenLogger 丢了 `prompt_hash`（已补）。Stage 9 测试 26/26 + 历史回归全绿 + 真实 API 0 次 + ¥0.00 | PASS + 已封存 |
 | 10 | 完成 **Visual Asset Layer**：语义与视觉分离——`core/visual.py`（VisualAsset / VisualAssetVersion / ReferenceImage + 五类/七态/来源词表）、`core/visual_registry.py`（身份分配 CHAR_001… / (kind,name) 永久绑定 / 版本单调递增绝不覆盖 / 参考图 sha256 checksum / 生命周期=Review 三态的确定性派生）、`core/visual_compose.py`（VisualComposer：调用模型前一次性展开 profile，Shot 只存名字引用）、`agents/visual_asset.py`（plan=TextProvider / extract=VisionProvider）。**Token 硬证据**：注册视觉资产前后 `Storyboard.to_dict()` 逐字节不变。Stage 10-B 完成 `qwen3.7-plus` 真实 Vision 冒烟 3 次（14,433 tokens）；Stage 10-C 修复参考图挂版本链路 + Git 污染。Stage 10 测试 76/76 + 历史回归全绿 | PASS + 已封存 |
-| 11 | 完成 **StoryboardAgent**：`agents/storyboard.py`（`StoryboardAgent`/`StoryboardStep` 继承 `LLMAgent`/`LLMStep` + §7.2 全部 **8 条**确定性规范化 `normalize_storyboard()`）+ `prompts/v0.2/storyboard_generation.txt`。Scene（调度层经 `inputs["scene"]` 注入，缺则 `StepError`）→ Storyboard → Beat → Shot，Shot 落 Stage 8 受控词表内、只存名字级引用 + 本镜头视觉增量，可被 `VisualComposer` 直接消费；受控词表从 `core.shot` 常量渲染进 user payload + prompt 词表一致性运行时自检；`artifact_name=storyboard_{scene_id}`、`step_id=storyboard_generation_{scene_id}`；走既有 Artifact 版本化 + Review 三态 + Retry，零新机制。Stage 11-C 修复"列表字段非列表静默当空"并补 T20 边界测试。Stage 11 测试 **65/65** + 历史回归 8 套全绿 + 真实 API **0 次**（真实冒烟脚本已就位未执行） | PASS（代码/测试完成）—— ⚠️ **待 commit + tag 封存** |
+| 11 | 完成 **StoryboardAgent**：`agents/storyboard.py`（`StoryboardAgent`/`StoryboardStep` 继承 `LLMAgent`/`LLMStep` + §7.2 全部 **8 条**确定性规范化 `normalize_storyboard()`）+ `prompts/v0.2/storyboard_generation.txt`。Scene（调度层经 `inputs["scene"]` 注入，缺则 `StepError`）→ Storyboard → Beat → Shot，Shot 落 Stage 8 受控词表内、只存名字级引用 + 本镜头视觉增量，可被 `VisualComposer` 直接消费；受控词表从 `core.shot` 常量渲染进 user payload + prompt 词表一致性运行时自检；`artifact_name=storyboard_{scene_id}`、`step_id=storyboard_generation_{scene_id}`；走既有 Artifact 版本化 + Review 三态 + Retry，零新机制。Stage 11-C 修复"列表字段非列表静默当空"并补 T20 边界测试。Stage 11 测试 **65/65** + 历史回归 8 套全绿 + 真实 API **0 次**（真实冒烟脚本已就位未执行） | PASS + 已封存 |
 
 Stage 11 分四段（各自独立会话）：
 
@@ -50,8 +50,7 @@ Stage 11 分四段（各自独立会话）：
 Stage 11-A   分析 / 架构设计        → v2/docs/stages/stage11_plan.md          PASS
 Stage 11-B   Storyboard 代码实现    → 45/45（+T15/T19 后 55/55）              PASS
 Stage 11-C   全面测试 / 收尾 Debug  → 65/65 + 历史回归 8 套全绿 + 修静默降级  PASS
-Stage 11-D   文档 / 交付            → 本文档 + HANDOFF + ROADMAP + CLAUDE.md + stage11_report  PASS
-Stage 11-D   Git commit + tag       → ⚠️ **待人工批准**（增量仍在工作区未提交）
+Stage 11-D   文档 / 交付 / Git      → 文档 + stage11_report + commit + tag    PASS
 ```
 
 Stage 10 分四段（各自独立会话）：
@@ -81,10 +80,10 @@ Stage 9-D   文档 / 交付 / Git      → 本文档 + HANDOFF + stage9_report +
 | V0.2 Stage 8 Canonical Schema | `abf8e88a983f13c437abe2b719c920d3c5c3c144` | `v0.2-stage8` |
 | V0.2 Stage 9 Provider Architecture | `82a89b50d337663027e8ecd638f45d7b94eaa882` | `v0.2-stage9` |
 | V0.2 Stage 10 Visual Asset Layer | `c8a3ed8282a767c3119ea29e012e7b8148d3ab3b` | `v0.2-stage10` |
-| V0.2 Stage 11 StoryboardAgent | ⚠️ **待 commit**（增量在工作区未提交） | `v0.2-stage11`（待创建） |
+| V0.2 Stage 11 StoryboardAgent | `v0.2-stage11`（`git rev-parse v0.2-stage11` 查精确 hash） | `v0.2-stage11` |
 
-版本 tag（`v0.1` / `v0.2-stage7` / `v0.2-stage8` / `v0.2-stage9` / `v0.2-stage10`）一经创建**永不移动、永不 force**；
-`v0.2-stage11` 创建后同样适用。
+版本 tag（`v0.1` / `v0.2-stage7` / `v0.2-stage8` / `v0.2-stage9` / `v0.2-stage10` /
+`v0.2-stage11`）一经创建**永不移动、永不 force**。
 
 ## 5. 当前架构
 

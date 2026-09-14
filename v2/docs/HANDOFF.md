@@ -5,20 +5,13 @@
 ## 1. 当前状态
 
 ```text
-当前状态：V0.2 Stage 11（StoryboardAgent）代码与测试已完成
-          ⚠️ **尚未 commit、尚未打 tag**（增量仍在工作区，见下方"待收尾动作"）
-最近稳定版本：v0.2-stage10 = c8a3ed8282a767c3119ea29e012e7b8148d3ab3b
-最近 commit：dc335a7 docs: migrate session workflow from Claude Code to WorkBuddy
+当前状态：V0.2 Stage 11（StoryboardAgent）已完成并封存 ✅
+最近稳定版本：v0.2-stage11（`git rev-parse v0.2-stage11` 查精确 hash）
+最近 commit：见 `git log --oneline -5`（不在此写死）
 下一阶段：Stage 12
 Stage 12：Project 生命周期 + 第一条完整业务链（Casting → Scene → Storyboard → 组装 → 审核）
           开工指令：`D:\AI\FilmAgent\v0.2开工指令12`（已生成）
 开工方式：**新开一个 WorkBuddy 会话**（不要用 `claude` CLI，见 §4）
-
-### 待收尾动作（Stage 11 封存，需人工批准）
-1. 复位被回归重写的报告产物（6 个文件，见 §5）
-2. rm -f llm_calls.jsonl v2/llm_calls.jsonl
-3. git add v2/ && git commit -m "feat(v0.2): storyboard agent (stage11)"
-4. git tag v0.2-stage11        ← 需人工明确批准
 ```
 
 ## 2. Git 锚点
@@ -30,11 +23,10 @@ Stage 12：Project 生命周期 + 第一条完整业务链（Casting → Scene �
 | V0.2 Stage 8 Canonical Schema | `abf8e88a983f13c437abe2b719c920d3c5c3c144` | `v0.2-stage8` |
 | V0.2 Stage 9 Provider Architecture | `82a89b50d337663027e8ecd638f45d7b94eaa882` | `v0.2-stage9` |
 | V0.2 Stage 10 Visual Asset Layer | `c8a3ed8282a767c3119ea29e012e7b8148d3ab3b` | `v0.2-stage10` |
-| V0.2 Stage 11 StoryboardAgent | **待 commit**（增量在工作区未提交） | `v0.2-stage11`（待创建） |
+| V0.2 Stage 11 StoryboardAgent | `v0.2-stage11`（`git rev-parse v0.2-stage11` 查精确 hash） | `v0.2-stage11` |
 
 约束：`FilmAgent/` 0 diff；`v0.1` / `v0.2-stage7` / `v0.2-stage8` / `v0.2-stage9` /
-`v0.2-stage10` 五个 tag 永不移动（`v0.2-stage11` 待创建后同样永不移动）；
-仓库根 `.gitignore` 0 diff。
+`v0.2-stage10` / `v0.2-stage11` 六个 tag 永不移动；仓库根 `.gitignore` 0 diff。
 
 ## 3. 协作规范（A/B/C/D 会话体系）
 
@@ -69,7 +61,7 @@ Stage 12：Project 生命周期 + 第一条完整业务链（Casting → Scene �
    4. `v2/docs/ORCHESTRATION.md`（总控工作方式 / 会话分工 / 铁律 / 环境陷阱）
    5. 最近 Stage Report：`v2/logs/stage11_storyboard/stage11_report.md`
    6. 当前 Git 状态：`git status --short`、`git log -5 --oneline`、
-      五个 tag 指向（`v0.2-stage11` 待创建）、`git diff -- FilmAgent/`
+      六个 tag 指向、`git diff -- FilmAgent/`
    7. **Stage 12 开工指令**：`D:\AI\FilmAgent\v0.2开工指令12`（已生成）
    8. 与 Stage 12 直接相关的代码：`v2/agents/`（四个业务 Agent）、
       `v2/workflow/engine.py`、`v2/context/assembler.py`、`v2/memory/store.py`、

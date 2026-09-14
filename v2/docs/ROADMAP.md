@@ -80,7 +80,7 @@ Stage 15 Audio / TTS               →  Stage 16 Assembly → V0.2.0-alpha
 ## 4. 当前格位
 
 ```text
-当前：Stage 11 代码/测试完成（⚠️ **未 commit / 未 tag**，待人工验收封存）；无技术阻塞
+当前：Stage 11 已封存（`v0.2-stage11`）；无技术阻塞
 下一阶段：Stage 12 —— Project 生命周期 + 第一条完整业务链
           开工指令：`D:\AI\FilmAgent\v0.2开工指令12`（已生成）
 阻塞：无技术阻塞。但 Stage 12 设计时**必须一并解决** Stage 11 暴露的两点：
