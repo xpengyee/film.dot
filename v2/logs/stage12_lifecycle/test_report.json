@@ -1,0 +1,633 @@
+{
+  "suite": "stage12_lifecycle",
+  "real_api_requests": 0,
+  "results": [
+    {
+      "name": "T01a ProjectOrchestrator 可构造（projects_root 可注入）",
+      "ok": true,
+      "detail": "root=D:\\AI\\FilmAgent-main\\v2\\logs\\stage12_lifecycle\\tmp_projects; dir=D:\\AI\\FilmAgent-main\\v2\\logs\\stage12_lifecycle\\tmp_projects\\t01"
+    },
+    {
+      "name": "T01b 非 Project 入参 → OrchestrationError（明确报错）",
+      "ok": true,
+      "detail": "got=OrchestrationError('ProjectOrchestrator 需要 core.models.Project，实际 str')"
+    },
+    {
+      "name": "T01c OrchestrationError 是 Exception 子类",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T01d orchestration 的 import 只落在允许的下层（core/llm/memory/context/workflow/review/agents/config）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T01e 下层不得 import orchestration（反向扫 0 命中）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T01f 导出齐备",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02a state.json 落盘且 JSON 合法",
+      "ok": true,
+      "detail": "path=D:\\AI\\FilmAgent-main\\v2\\logs\\stage12_lifecycle\\tmp_projects\\t02_state\\state.json"
+    },
+    {
+      "name": "T02b 原子写不残留 *.tmp（临时文件 + os.replace）",
+      "ok": true,
+      "detail": "leftover=[]"
+    },
+    {
+      "name": "T02c to_dict / from_dict 往返一致",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02d 往返后内容正确",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02e approved + 磁盘 artifact 存在 → should_skip=True",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02f ★approved 但磁盘 artifact 被删 → should_skip=False（R12，重跑）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02g failed 条目 → should_skip=False",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02h 缺失条目 → should_skip=False",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02i record_scene 未知 kind → OrchestrationError",
+      "ok": true,
+      "detail": "got=OrchestrationError(\"未知场景段落 kind: 'bogus'（scene / storyboard）\")"
+    },
+    {
+      "name": "T02j 未指定 path → OrchestrationError（不静默丢状态）",
+      "ok": true,
+      "detail": "got=OrchestrationError('OrchestrationState 未指定保存路径（构造时 path=None），无法落盘')"
+    },
+    {
+      "name": "T02k atomic_write_json 直接可用且无 tmp 残留",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03a 好 Scene → 无缺口（[]）",
+      "ok": true,
+      "detail": "gaps=[]"
+    },
+    {
+      "name": "T03b 规则1 who 含未登记角色 → UNKNOWN_CHARACTER",
+      "ok": true,
+      "detail": "gaps=[\"UNKNOWN_CHARACTER scene.info.who[1]：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\"]"
+    },
+    {
+      "name": "T03c 规则2 非法地点 → INVALID_LOCATION",
+      "ok": true,
+      "detail": "gaps=[\"INVALID_LOCATION scene.info.where：'Moon base' 不在已注册地点中（可用 ['Apartment kitchen', 'Apartment living room', 'Beverage Room', 'Billiard room', 'Dining Room', 'Gaming room', 'Large kitchen', 'Meeting room', 'Office', 'Reception Room', 'Relaxing Room', 'Roadside', 'Sofa Corner', 'Storehouse', 'Work room']）\"]"
+    },
+    {
+      "name": "T03d 规则2 空 where → MISSING_LOCATION",
+      "ok": true,
+      "detail": "gaps=['MISSING_LOCATION scene.info.where：为空（Stage 11 无法解析站位点，必然失败）']"
+    },
+    {
+      "name": "T03e 规则3 dialogue speaker 未登记 → UNKNOWN_CHARACTER（.speaker）",
+      "ok": true,
+      "detail": "gaps=[\"UNKNOWN_CHARACTER scene.lines[0].speaker：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\"]"
+    },
+    {
+      "name": "T03f 规则4 initial_positions 非法站位点 → INVALID_POSITION",
+      "ok": true,
+      "detail": "gaps=[\"INVALID_POSITION scene.initial_positions[0].position：站位点 'Position 99' 不存在于地点 'Apartment kitchen'（可用 ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5']）\", \"INVALID_POSITION scene.lines[1].move.destination：站位点 'Nowhere' 不存在于地点 'Apartment kitchen'（可用 ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5']）\"]"
+    },
+    {
+      "name": "T03g 规则5 move.destination 非法 → INVALID_POSITION",
+      "ok": true,
+      "detail": "gaps=[\"INVALID_POSITION scene.initial_positions[0].position：站位点 'Position 99' 不存在于地点 'Apartment kitchen'（可用 ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5']）\", \"INVALID_POSITION scene.lines[1].move.destination：站位点 'Nowhere' 不存在于地点 'Apartment kitchen'（可用 ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5']）\"]"
+    },
+    {
+      "name": "T03h scene=None → 返回非空 list，不抛异常",
+      "ok": true,
+      "detail": "gaps=['scene 缺失：无法执行前置校验（scene is None）']"
+    },
+    {
+      "name": "T03i scene 类型非法 → 返回缺口（不抛异常）",
+      "ok": true,
+      "detail": "gaps=['scene 类型非法：int（需 core.models.Scene 对象或其 to_v01() dict）']"
+    },
+    {
+      "name": "T03j registry=None → 返回缺口清单（不抛异常）",
+      "ok": true,
+      "detail": "gaps=['registry 缺失：无法校验地点 / 站位点（AssetRegistry is None）']"
+    },
+    {
+      "name": "T03k known_characters=None → 明确记缺口（不静默通过）",
+      "ok": true,
+      "detail": "gaps=['known_characters 未提供（None）：无法校验角色引用白名单']"
+    },
+    {
+      "name": "T03l 空 who / 空 lines → 无角色缺口（地点合法即通过）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03m format_gaps 可读化",
+      "ok": true,
+      "detail": "INVALID_POSITION scene.initial_positions[0].position：站位点 'Position 99' 不存在于地点 'A"
+    },
+    {
+      "name": "T03b-1 落盘 dict 的 scene 行确无 'type' 键（证明必须 from_v01 还原）",
+      "ok": true,
+      "detail": "keys=['move', 'current position']"
+    },
+    {
+      "name": "T03b-2 ★传 to_v01() dict → move 行 character 仍被检出",
+      "ok": true,
+      "detail": "gaps=[\"UNKNOWN_CHARACTER scene.lines[2].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[2].move.character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"INVALID_POSITION scene.lines[2].positions[0].position：站位点 'Position 99' 不存在于地点 'Apartment kitchen'（可用 ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5']）\", \"INVALID_POSITION scene.lines[2].move.destination：站位点 'Nowhere' 不存在于地点 'Apartment kitchen'（可用 ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5']）\"]"
+    },
+    {
+      "name": "T03b-3 ★传 to_v01() dict → move 行 destination 仍被检出",
+      "ok": true,
+      "detail": "gaps=[\"UNKNOWN_CHARACTER scene.lines[2].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[2].move.character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"INVALID_POSITION scene.lines[2].positions[0].position：站位点 'Position 99' 不存在于地点 'Apartment kitchen'（可用 ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5']）\", \"INVALID_POSITION scene.lines[2].move.destination：站位点 'Nowhere' 不存在于地点 'Apartment kitchen'（可用 ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5']）\"]"
+    },
+    {
+      "name": "T03b-4 若不做 from_v01，move 行会完全漏检（本测试即该缺陷的护栏）",
+      "ok": true,
+      "detail": "move_gaps=[\"UNKNOWN_CHARACTER scene.lines[2].move.character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"INVALID_POSITION scene.lines[2].move.destination：站位点 'Nowhere' 不存在于地点 'Apartment kitchen'（可用 ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5']）\"]"
+    },
+    {
+      "name": "T04a 坏 Scene 被拦在编排层（errors 含 preflight 条目）",
+      "ok": true,
+      "detail": "errors=[{'stage': 'preflight', 'scene_id': 1, 'message': '前置校验未通过：Scene 有缺口，已拦在编排层，不进入 Storyboard 的重试风暴', 'gaps': [\"UNKNOWN_CHARACTER scene.info.who[0]：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[0].speaker：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[0].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[1].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[1].move.character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.initial_positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\"]}]"
+    },
+    {
+      "name": "T04b 缺口清单含 UNKNOWN_CHARACTER",
+      "ok": true,
+      "detail": "gaps=[\"UNKNOWN_CHARACTER scene.info.who[0]：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[0].speaker：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[0].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[1].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[1].move.character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.initial_positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\"]"
+    },
+    {
+      "name": "T04c ★Stage 11 未被调用（storyboard_generation 调用次数 == 0，无重试风暴）",
+      "ok": true,
+      "detail": "calls=0"
+    },
+    {
+      "name": "T04d 不静默成功（status != success）",
+      "ok": true,
+      "detail": "status=failed"
+    },
+    {
+      "name": "T04e storyboard 段记 pending（未进入 Stage 11）",
+      "ok": true,
+      "detail": "sb={'status': 'pending', 'artifact': '', 'attempts': 0, 'run_id': '', 'workflow_id': 'storyboard_1', 'preflight_gaps': [\"UNKNOWN_CHARACTER scene.info.who[0]：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[0].speaker：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[0].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[1].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[1].move.character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.initial_positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\"]}"
+    },
+    {
+      "name": "T04b-1 起始 Memory characters 为空",
+      "ok": true,
+      "detail": "chars=[]"
+    },
+    {
+      "name": "T04b-2 Memory 空 → Context characters 为空（R2 根因：LLM 会编造角色名）",
+      "ok": true,
+      "detail": "data=[]"
+    },
+    {
+      "name": "T04b-3 ★Casting 通过后编排层已 set_characters（R2 修复）",
+      "ok": true,
+      "detail": "names=['Mercy']"
+    },
+    {
+      "name": "T04b-4 编排层未代批事实（严禁 approve_fact）",
+      "ok": true,
+      "detail": "facts=[]"
+    },
+    {
+      "name": "T04b-5 run 成功（角色白名单已注入下游）",
+      "ok": true,
+      "detail": "status=success"
+    },
+    {
+      "name": "T05a casting.json / scene_1.json / storyboard_1.json 全部落盘",
+      "ok": true,
+      "detail": "files=['casting.json', 'scene_1.json', 'storyboard_1.json', 'visual_asset_character_Mercy.json', 'visual_asset_location_Apartment_kitchen.json', 'visual_asset_prop_prop-scene-1.json']"
+    },
+    {
+      "name": "T05b status = success",
+      "ok": true,
+      "detail": "status=success"
+    },
+    {
+      "name": "T05c completeness 数值正确",
+      "ok": true,
+      "detail": "comp={'scenes_total': 1, 'scenes_done': 1, 'storyboards_total': 1, 'storyboards_done': 1, 'assets_referenced': 3, 'assets_approved': 3}"
+    },
+    {
+      "name": "T05d StoryboardValidator 全过（0 错误）",
+      "ok": true,
+      "detail": "errors=[]"
+    },
+    {
+      "name": "T05e 所有 Shot.status == planned",
+      "ok": true,
+      "detail": "statuses=['planned', 'planned']"
+    },
+    {
+      "name": "T05f scene_1.json 可还原为 Scene 且 who 正确",
+      "ok": true,
+      "detail": "who={'who': ['Mercy'], 'where': 'Apartment kitchen', 'what': 'scene-1 plot'}"
+    },
+    {
+      "name": "T05g errors 为空",
+      "ok": true,
+      "detail": "errors=[]"
+    },
+    {
+      "name": "T06a status = success",
+      "ok": true,
+      "detail": "status=success"
+    },
+    {
+      "name": "T06b ★storyboard_N.scene_id / 内层 shot.scene_id 各自正确 + 内容互不串场",
+      "ok": true,
+      "detail": "sb1:scene_id=1,shot_scene_ids=[1],cross=False; sb2:scene_id=2,shot_scene_ids=[2],cross=False; sb3:scene_id=3,shot_scene_ids=[3],cross=False"
+    },
+    {
+      "name": "T06c 三份 scene_N.json 各自正确",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06d 三份 workflow_id 互异且命名正确",
+      "ok": true,
+      "detail": "ids=['storyboard_1', 'storyboard_2', 'storyboard_3']"
+    },
+    {
+      "name": "T06e ★R4：三份 storyboard 内容互不相同（证明 mock 场景感知，T06 有效）",
+      "ok": true,
+      "detail": "distinct=3"
+    },
+    {
+      "name": "T06f 每份 storyboard 只含自己的 scene-N 标记",
+      "ok": true,
+      "detail": "markers=[True, True, True]"
+    },
+    {
+      "name": "T06g step_id 命名规范 storyboard_generation_1/2/3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T07a 三次 run 的 run_id 互异",
+      "ok": true,
+      "detail": "rids=['150d971a0cc1', '0d386d31acc4', '11d997f8657c']"
+    },
+    {
+      "name": "T07b ArtifactStore.list_files 各场景不交叉",
+      "ok": true,
+      "detail": "f1=['storyboard_1.json']; f2=['storyboard_2.json']; f3=['storyboard_3.json']"
+    },
+    {
+      "name": "T08a 重跑生成新版本 storyboard_1_v2.json / casting_v2.json",
+      "ok": true,
+      "detail": "files=['casting.json', 'casting_v2.json', 'scene_1.json', 'scene_1_v2.json', 'storyboard_1.json', 'storyboard_1_v2.json', 'visual_asset_character_Mercy.json', 'visual_asset_location_Apartment_kitchen.json', 'visual_asset_prop_prop-scene-1.json']"
+    },
+    {
+      "name": "T08b ★原文件 storyboard_1.json 字节不变",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T08c 原文件 casting.json 字节不变",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09a ★run_report.review_mode 含 'auto_approve (programmatic, NOT human review)'",
+      "ok": true,
+      "detail": "review_mode='auto_approve (programmatic, NOT human review)'"
+    },
+    {
+      "name": "T09b ★run_report 不得出现'已人工审核'字样（AC13 诚实性）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09c scripted APPROVED_WITH_EDIT → 新版本 casting_v2.json，原文件保留",
+      "ok": true,
+      "detail": "files=['casting.json', 'casting_v2.json', 'casting_v3.json']"
+    },
+    {
+      "name": "T09d scripted run 的 review_mode 标注为程序化模拟",
+      "ok": true,
+      "detail": "review_mode='scripted (programmatic, NOT human review)'"
+    },
+    {
+      "name": "T09e scripted REJECTED → run failed（停止）",
+      "ok": true,
+      "detail": "status=failed"
+    },
+    {
+      "name": "T09f rejected 后下游不执行（无 storyboard 产物）",
+      "ok": true,
+      "detail": "files=[]"
+    },
+    {
+      "name": "T09g 未知 review_policy → OrchestrationError（明确报错）",
+      "ok": true,
+      "detail": "got=OrchestrationError(\"未知 review_policy：'bogus_policy'（支持 auto_approve / scripted:<file> / human_stub）\")"
+    },
+    {
+      "name": "T09b-1 ★human_stub → OrchestrationError（停下等外部注入）",
+      "ok": true,
+      "detail": "got=OrchestrationError(\"需人工介入：等待外部注入审核决策（review_policy='human_stub'）；编排层不自动批准、不伪造人工审核\")"
+    },
+    {
+      "name": "T09b-2 ★human_stub 不产生任何 artifact（未伪造人工审核）",
+      "ok": true,
+      "detail": "files=[]"
+    },
+    {
+      "name": "T10a 实体去重：Mercy / 地点 / 道具各只出现一次",
+      "ok": true,
+      "detail": "ents=[('character', 'Mercy'), ('location', 'Apartment kitchen'), ('prop', 'old key')]"
+    },
+    {
+      "name": "T10b 空 location 镜头回落 Storyboard.location",
+      "ok": true,
+      "detail": "ents=[('character', 'Mercy'), ('location', 'Apartment kitchen'), ('prop', 'old key')]"
+    },
+    {
+      "name": "T10c 三类实体齐备（character/location/prop）",
+      "ok": true,
+      "detail": "kinds={'location', 'prop', 'character'}"
+    },
+    {
+      "name": "T10d 视觉齐备：assets_approved == assets_referenced == 5（3 场景去重后）",
+      "ok": true,
+      "detail": "comp={'scenes_total': 3, 'scenes_done': 3, 'storyboards_total': 3, 'storyboards_done': 3, 'assets_referenced': 5, 'assets_approved': 5}"
+    },
+    {
+      "name": "T10e registry 5 资产全部 approved，character 只 1 个（不重复建档）",
+      "ok": true,
+      "detail": "summ={'assets': 5, 'by_kind': {'character': 1, 'location': 1, 'prop': 3}, 'versions': 5, 'active': 5}"
+    },
+    {
+      "name": "T10f registry.json 存在",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10g resume 重跑不重复建档（assets 仍 5）",
+      "ok": true,
+      "detail": "summ={'assets': 5, 'by_kind': {'character': 1, 'location': 1, 'prop': 3}, 'versions': 5, 'active': 5}"
+    },
+    {
+      "name": "T10b-1 ★缺必填 → assets_approved < assets_referenced",
+      "ok": true,
+      "detail": "comp={'scenes_total': 1, 'scenes_done': 1, 'storyboards_total': 1, 'storyboards_done': 1, 'assets_referenced': 3, 'assets_approved': 2}"
+    },
+    {
+      "name": "T10b-2 不静默成功（status != success）",
+      "ok": true,
+      "detail": "status=partial"
+    },
+    {
+      "name": "T10b-3 该实体记 pending",
+      "ok": true,
+      "detail": "pending=['prop:prop-scene-1']"
+    },
+    {
+      "name": "T10b-4 prop 视觉资产重试耗尽（3 次尝试）",
+      "ok": true,
+      "detail": "prop_calls=3"
+    },
+    {
+      "name": "T11a 已完成场景不重跑（storyboard_1 无新版本）",
+      "ok": true,
+      "detail": "f1=['storyboard_1.json']"
+    },
+    {
+      "name": "T11b 新场景 2 正常产出 storyboard_2.json",
+      "ok": true,
+      "detail": "f2=['storyboard_2.json']"
+    },
+    {
+      "name": "T11c storyboard_1.json 字节不变",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T11d warnings 记录 resume 跳过（casting + scene1 + storyboard1）",
+      "ok": true,
+      "detail": "skips=['casting: resume 跳过（已 approved，artifact=casting.json）', 'scene 1: resume 跳过（已 approved，artifact=scene_1.json）', 'storyboard 1: resume 跳过（已 approved，artifact=storyboard_1.json）']"
+    },
+    {
+      "name": "T11e ★resume 不调用引擎（场景 1 无 storyboard 调用）",
+      "ok": true,
+      "detail": "calls=0"
+    },
+    {
+      "name": "T11f resume 后 status = success",
+      "ok": true,
+      "detail": "status=success"
+    },
+    {
+      "name": "T11g resume 后 mock 调用只覆盖新增部分（scene2 + sb2 + prop2 = 3）",
+      "ok": true,
+      "detail": "calls=['scene_generation', 'storyboard_generation', 'visual_asset_plan']"
+    },
+    {
+      "name": "T12a 不静默成功（status != success）",
+      "ok": true,
+      "detail": "status=partial"
+    },
+    {
+      "name": "T12b status ∈ {partial, failed}",
+      "ok": true,
+      "detail": "status=partial"
+    },
+    {
+      "name": "T12c ★errors 能定位到具体 scene_id",
+      "ok": true,
+      "detail": "pf=[{'stage': 'preflight', 'scene_id': 2, 'message': '前置校验未通过：Scene 有缺口，已拦在编排层，不进入 Storyboard 的重试风暴', 'gaps': [\"UNKNOWN_CHARACTER scene.info.who[0]：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[0].speaker：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[0].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[1].positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.lines[1].move.character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\", \"UNKNOWN_CHARACTER scene.initial_positions[0].character：'Ghost' 不在已批准角色清单中（当前 1 个：['Mercy']）\"]}]"
+    },
+    {
+      "name": "T12d 场景 1 仍成功（部分完成不整体丢弃）",
+      "ok": true,
+      "detail": "comp={'scenes_total': 2, 'scenes_done': 0, 'storyboards_total': 2, 'storyboards_done': 1, 'assets_referenced': 3, 'assets_approved': 3}"
+    },
+    {
+      "name": "T12e run_spec.scene_ids 重复 → OrchestrationError（R13，不静默去重）",
+      "ok": true,
+      "detail": "got=OrchestrationError('run_spec.scene_ids 含重复场景号 [1]：重复会让同名 artifact 被反复版本化、state 键互相覆盖；请在入参去重（编排层不静默去重）')"
+    },
+    {
+      "name": "T13a 真实 API = 0（程序化快照断言，不人工数数）",
+      "ok": true,
+      "detail": "real=0"
+    },
+    {
+      "name": "T13b mock 调用已计数（>= 1）",
+      "ok": true,
+      "detail": "mock=6"
+    },
+    {
+      "name": "T14a ★注册视觉资产前后 Storyboard.to_dict() 逐字节不变（Token 硬证据）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T14b ★视觉档案未渗漏进 Storyboard（无 red wool coat / amber and wood tones）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T14c 实体全部注册且 approved",
+      "ok": true,
+      "detail": "entities=[('character', 'Mercy'), ('location', 'Apartment kitchen'), ('prop', 'prop-scene-1')]"
+    },
+    {
+      "name": "T14d ★场景间不膨胀（storyboard_1 不含 scene-2/3；storyboard_3 不含 scene-1/2）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T14e 三份 artifact 大小同量级（各自场景复杂度一致，无叠加膨胀）",
+      "ok": true,
+      "detail": "sizes=[2979, 2979, 2979]"
+    },
+    {
+      "name": "T15a compileall v2/orchestration 全过",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T15b import 冒烟 + 导出齐备",
+      "ok": true,
+      "detail": "__all__=['ProjectOrchestrator', 'OrchestrationError', 'OrchestrationState', 'preflight_check', 'format_gaps', 'atomic_write_json']"
+    },
+    {
+      "name": "T15c 新增文件无硬编码密钥字样（扫描 sk- 命中）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T15d ASSET_KINDS 精确不变",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16 禁改清单 0 diff（§8.3 + FilmAgent/ + 仓库根 .gitignore）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T17 ★v2/workflow/ 0 diff + 0 新增（上层编排未污染引擎）",
+      "ok": true,
+      "detail": "status=''"
+    },
+    {
+      "name": "T17b v2/core + v2/agents 0 diff",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19a scenes_done == 磁盘 scene_*.json 数",
+      "ok": true,
+      "detail": "3 vs 3"
+    },
+    {
+      "name": "T19b storyboards_done == 磁盘 storyboard_*.json 数",
+      "ok": true,
+      "detail": "3 vs 3"
+    },
+    {
+      "name": "T19c assets_approved == registry 中 approved 数",
+      "ok": true,
+      "detail": "5 vs 5"
+    },
+    {
+      "name": "T19d run_<run_id>.json 落盘且与返回值一致",
+      "ok": true,
+      "detail": "path=D:\\AI\\FilmAgent-main\\v2\\logs\\stage12_lifecycle\\tmp_projects\\t19\\orchestration\\run_a9178db245cd.json"
+    },
+    {
+      "name": "T19e state.json 落盘（编排进度唯一事实源）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19f state.json 只序列化编排自有状态（不含 Project 整体 / title / world，R15）",
+      "ok": true,
+      "detail": "keys=['episodes', 'project_id', 'updated_at', 'version', 'visual_assets']"
+    },
+    {
+      "name": "T19g state.json 记录本集三场景两段",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage1 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage3 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage4 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage6 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage7 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage8 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage9 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage10 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage11 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "passed": 125,
+  "total": 125
+}

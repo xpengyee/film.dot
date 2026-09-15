@@ -1,7 +1,7 @@
 # PROJECT_STATUS.md —— FilmAgent 项目状态
 
 > FilmAgent 的权威项目状态文档，任何新 **WorkBuddy 会话**开始时都应先读本文件。
-> 最后更新：V0.2 Stage 11 封存后（StoryboardAgent 文档/交付沉淀完成）。
+> 最后更新：V0.2 Stage 12 封存后（Project 生命周期编排层文档/交付沉淀完成）。
 
 ## 1. 项目简介
 
@@ -17,17 +17,18 @@
 
 ```text
 当前版本：V0.2（重构版基础设施）
-当前阶段：StoryboardAgent 完成并封存 —— COMPLETE
+当前阶段：Project 生命周期编排层完成并封存 —— COMPLETE
 
 V0.2 Stage 8：PASS + 已封存
 V0.2 Stage 9：PASS + 已封存（Multi-Modal Provider Architecture）
 V0.2 Stage 10：PASS + 已封存（Visual Asset Layer）
 V0.2 Stage 11：PASS + 已封存（StoryboardAgent：Scene → Storyboard → Beat → Shot）
-V0.2 Stage 12：NOT STARTED（Project 生命周期 + 第一条完整业务链；
-              开工指令：`D:\AI\FilmAgent\v0.2开工指令12`）
+V0.2 Stage 12：PASS + 已封存（Project 生命周期 + 第一条完整业务链：
+               Casting → Scene → Storyboard → 视觉资产齐备；编排层 `v2/orchestration/`）
+               `git rev-parse v0.2-stage12` 查精确 hash
 ```
 
-## 3. 历史 Stage 0–11（里程碑）
+## 3. 历史 Stage 0–12（里程碑）
 
 | Stage | 内容 | 状态 |
 |---|---|---|
@@ -43,6 +44,16 @@ V0.2 Stage 12：NOT STARTED（Project 生命周期 + 第一条完整业务链；
 | 9 | 完成 Multi-Modal **Provider Architecture**：统一 Provider 接口族（Text/Vision/Multimodal/Embedding + 预留 Image/Video/Audio）+ Mock 四件套 + Registry/Factory + Router 真入口 + Config Provider 注册表（deepseek/bailian/local/vision/embedding 五档）+ Bailian 文本实现位 + `OpenAICompatibleTextProvider`。Agent / Router / Provider / Model 职责边界划清，业务 Agent 只认抽象 Provider。**C 会话发现并修复 1 个真实缺陷**：Mock Provider 写 TokenLogger 丢了 `prompt_hash`（已补）。Stage 9 测试 26/26 + 历史回归全绿 + 真实 API 0 次 + ¥0.00 | PASS + 已封存 |
 | 10 | 完成 **Visual Asset Layer**：语义与视觉分离——`core/visual.py`（VisualAsset / VisualAssetVersion / ReferenceImage + 五类/七态/来源词表）、`core/visual_registry.py`（身份分配 CHAR_001… / (kind,name) 永久绑定 / 版本单调递增绝不覆盖 / 参考图 sha256 checksum / 生命周期=Review 三态的确定性派生）、`core/visual_compose.py`（VisualComposer：调用模型前一次性展开 profile，Shot 只存名字引用）、`agents/visual_asset.py`（plan=TextProvider / extract=VisionProvider）。**Token 硬证据**：注册视觉资产前后 `Storyboard.to_dict()` 逐字节不变。Stage 10-B 完成 `qwen3.7-plus` 真实 Vision 冒烟 3 次（14,433 tokens）；Stage 10-C 修复参考图挂版本链路 + Git 污染。Stage 10 测试 76/76 + 历史回归全绿 | PASS + 已封存 |
 | 11 | 完成 **StoryboardAgent**：`agents/storyboard.py`（`StoryboardAgent`/`StoryboardStep` 继承 `LLMAgent`/`LLMStep` + §7.2 全部 **8 条**确定性规范化 `normalize_storyboard()`）+ `prompts/v0.2/storyboard_generation.txt`。Scene（调度层经 `inputs["scene"]` 注入，缺则 `StepError`）→ Storyboard → Beat → Shot，Shot 落 Stage 8 受控词表内、只存名字级引用 + 本镜头视觉增量，可被 `VisualComposer` 直接消费；受控词表从 `core.shot` 常量渲染进 user payload + prompt 词表一致性运行时自检；`artifact_name=storyboard_{scene_id}`、`step_id=storyboard_generation_{scene_id}`；走既有 Artifact 版本化 + Review 三态 + Retry，零新机制。Stage 11-C 修复"列表字段非列表静默当空"并补 T20 边界测试。Stage 11 测试 **65/65** + 历史回归 8 套全绿 + 真实 API **0 次**（真实冒烟脚本已就位未执行） | PASS + 已封存 |
+| 12 | 完成 **Project 生命周期编排层**：新增最顶层 `v2/orchestration/`——`preflight.py`（调度前置校验门：5 条规则、返回缺口清单不抛异常、★先 `Scene.from_v01` 还原 `Line.type`）、`state.py`（`OrchestrationState` 编排进度 + **自实现原子写** tempfile+`os.replace` + resume 判定含磁盘存在性校验）、`pipeline.py`（`ProjectOrchestrator`：**两段式**多场景编排 + 集级 Casting（含 `set_characters`/`set_world`，**严禁 approve_fact**）+ 视觉资产齐备 + 三种 review 策略 + resume + run_report）、`__init__.py`。把 Casting / SceneGeneration / Storyboard / VisualAsset 四个已封存 Agent 串成端到端业务链：一个项目的一集（N 个场景）从 0 走到"分镜齐备 + 视觉资产齐备"。**零改禁改清单**：★ `v2/workflow/` **0 diff + 0 新增**（上层编排未污染引擎）；依赖方向扩为 `core → (llm\|memory\|context) → workflow → review → agents → orchestration`。Stage 12 测试 **125/125**（T01~T19 + T03b/T04b/T06b/T09b/T10b 增强，**总控独立复跑** rc=0）+ 历史回归 **9 套**全绿 + 真实 API **0 次**（真实冒烟脚本未创建未执行，如实登记为"阻塞：需人工配置"） | PASS + 已封存 |
+
+Stage 12 分四段（各自独立会话）：
+
+```text
+Stage 12-A   分析 / 架构设计        → v2/docs/stages/stage12_plan.md（含总控裁决 §12） PASS（总控独立复核 23/23）
+Stage 12-B   编排层代码实现         → v2/orchestration/（4 文件）+ 完整套件 T01~T19   PASS
+Stage 12-C   测试 / Debug           → 经总控裁定跳过（B 已交付完整 125 条套件）        SKIPPED
+Stage 12-D   文档 / 交付 / Git      → 四文档 + stage12_report.md + commit + tag        PASS
+```
 
 Stage 11 分四段（各自独立会话）：
 
@@ -81,9 +92,10 @@ Stage 9-D   文档 / 交付 / Git      → 本文档 + HANDOFF + stage9_report +
 | V0.2 Stage 9 Provider Architecture | `82a89b50d337663027e8ecd638f45d7b94eaa882` | `v0.2-stage9` |
 | V0.2 Stage 10 Visual Asset Layer | `c8a3ed8282a767c3119ea29e012e7b8148d3ab3b` | `v0.2-stage10` |
 | V0.2 Stage 11 StoryboardAgent | `v0.2-stage11`（`git rev-parse v0.2-stage11` 查精确 hash） | `v0.2-stage11` |
+| V0.2 Stage 12 Project 生命周期编排 | `v0.2-stage12`（`git rev-parse v0.2-stage12` 查精确 hash） | `v0.2-stage12` |
 
 版本 tag（`v0.1` / `v0.2-stage7` / `v0.2-stage8` / `v0.2-stage9` / `v0.2-stage10` /
-`v0.2-stage11`）一经创建**永不移动、永不 force**。
+`v0.2-stage11` / `v0.2-stage12`）一经创建**永不移动、永不 force**。
 
 ## 5. 当前架构
 
@@ -100,11 +112,12 @@ V0.2
 ├── memory
 ├── context
 ├── review
-└── agents    base / casting / scene generation / visual_asset（Stage 10）/ storyboard（Stage 11）
+├── agents    base / casting / scene generation / visual_asset（Stage 10）/ storyboard（Stage 11）
+└── orchestration  preflight / state / pipeline（Stage 12，★最顶层）
 ```
 
-依赖方向：`core → (llm | memory | context) → workflow → review → agents`
-（只允许向上，禁止反向/循环）。
+依赖方向：`core → (llm | memory | context) → workflow → review → agents → orchestration`
+（只允许向下，禁止反向/循环；**下面任何层不得 import orchestration**）。
 
 ### 5.2 Agent / Router / Provider / Model 分层（Stage 9 落地）
 
@@ -265,7 +278,52 @@ Scene 由调度层放进 `WorkflowContext.inputs["scene"]`（`Scene` 对象或 `
 **warnings 归属**：统一放 `Storyboard.metadata["normalize_warnings"]`（不放 `Shot.metadata`，
 以免扰动 Token 硬证据的逐字节断言）。
 
-### 5.7 当前百炼策略
+### 5.7 编排层（Stage 12 落地）
+
+**缺口补齐**：Stage 0–11 造齐了零件（四个业务 Agent 各自可跑可测），但**从没有任何代码把零件
+连起来跑过一集**——没人决定先跑谁 / 后跑谁 / 跑几次 / 场景怎么分发 / 整集是否齐备。
+Stage 12 补上这一层（**第一次让整机通电**）。
+
+```text
+ProjectOrchestrator.run(run_spec)
+  ① 集级 Casting（casting_ep{N}，一次 run）→ approved 后 set_characters / set_world（★严禁 approve_fact）
+  ② 每场景【两段式】：scene_gen_{sid} 一次 run → preflight 前置校验门 → storyboard_{sid} 一次 run
+  ③ 视觉资产段：确定性收集被引用实体 → 每实体一次 run → register/new_version/submit/approve 写回 registry
+  ④ 齐备判定（与磁盘交叉核对）→ run_report 原子落盘 + state.json 原子落盘
+```
+
+| 模块 | 职责 |
+|---|---|
+| `orchestration/preflight.py` | `preflight_check(scene, known_characters, registry) -> List[str]`：调度**前置校验门**（5 条规则，判据与 `core/validator.py` 同源、只前移不另立）；**返回缺口清单、不抛异常**；★必须先 `Scene.from_v01` 还原 `Line.type`，否则 move 行漏检 |
+| `orchestration/state.py` | `OrchestrationState`：编排进度唯一事实源（`state.json`）+ `to_dict`/`from_dict` 往返 + **自实现原子写**（tempfile + `os.replace`，序列化对齐 `core.io.write_json`）+ `should_skip`（含磁盘 artifact 存在性校验） |
+| `orchestration/pipeline.py` | `ProjectOrchestrator`：两段式多场景编排 + 集级 Casting + 视觉资产齐备 + 三种 review 策略 + resume + run_report |
+| `orchestration/__init__.py` | 导出 `ProjectOrchestrator` / `OrchestrationError` / `OrchestrationState` / `preflight_check` / `format_gaps` / `atomic_write_json` |
+
+**三条硬约束（总控裁决）**：
+
+```text
+1. 两段式（裁决 3）：scene_gen_{sid} 与 storyboard_{sid} 各一次 run。
+   为什么不能同 run 装两 step：WorkflowEngine.run() 的 inputs 是整次 run 共享的一个 dict，
+   而 StoryboardStep 只读 inputs["scene"]、**完全忽略上游 Step 产出**（实测）→ 必然串场或 StepError。
+   两段式**零改引擎**、语义更干净（每 run 恰一个 step）、resume 天然可用。
+   ★ storyboard 段必须显式 inputs["scene"] = Scene（不得依赖上游产出）。
+2. 编排层写 Memory（裁决 1）：Casting 通过后 set_characters（沿用同一 run 的 Casting Artifact）
+   + set_world；★严禁 approve_fact（事实批准是"人"的动作，编排层不得代批）。
+   不写则 Context characters 为空 → LLM 编造角色名 → Scene 层不回锚 lines → 重试耗尽 FAILED。
+3. 视觉资产只支持 approved / rejected（裁决 2）：遇 approved_with_edit → 明确抛 OrchestrationError
+   （apply_review_decision 直接报错，且编辑后 profile 缺确定性来源；fail-loud 优于静默猜）。
+```
+
+**resume 语义（裁决 6）**：对已 approved 的单元**直接跳过、不调用引擎**（`state.json` 是唯一
+事实源，不存第二份 `WorkflowRun`）；跳过前校验磁盘 artifact 仍存在（缺失 → 视为 pending 重跑）。
+
+**审核策略（§7.4，★诚实性）**：`auto_approve` / `scripted:<file>` / `human_stub`；
+`run_report["review_mode"]` **必含** `"programmatic, NOT human review"`；
+**绝不**把 auto_approve 的产物描述成"已人工审核通过"。
+
+**零侵入**：编排层是最顶层，只向下依赖；`v2/workflow/` **0 diff + 0 新增**（Stage 12 套件 T17 断言）。
+
+### 5.8 当前百炼策略
 
 - **阿里云百炼属于当前主要云端 Provider 候选，但 FilmAgent 核心架构不得绑定百炼。**
   百炼只是 `PROVIDERS` 里的一个 Config 档（`bailian_text` / `bailian_vision` /
@@ -275,7 +333,7 @@ Scene 由调度层放进 `WorkflowContext.inputs["scene"]`（`Scene` 对象或 `
 - **不要把具体模型名称硬编码为项目架构事实**：模型名与免费策略可能变化，
   具体模型放在 Provider / Config 层（`PROVIDERS[*]["default_model"]`），不进业务代码。
 
-### 5.8 当前本地模型策略
+### 5.9 当前本地模型策略
 
 ```text
 本地模型属于未来可接入 Provider（未来 LocalTextProvider 大概率是 OpenAI 兼容文本的一档配置）。
@@ -318,43 +376,70 @@ Scene 由调度层放进 `WorkflowContext.inputs["scene"]`（`Scene` 对象或 `
   - **D-2（已判非缺陷，fail-loud）**：上游 `Scene.info.who` 含未登记角色时，
     `StoryboardValidator` 报 `UNKNOWN_CHARACTER` → 3 次重试后 FAILED（不静默丢角色）。
     建议 Stage 12 在调度层先校验 Scene 再喂 Stage 11。已固化为测试 T20e。
+    ★ **已在 Stage 12 解决**：编排层 `preflight_check` 前置校验门把坏 Scene 拦在调度层
+    （不再进入 Stage 11 重试风暴），见 §5.7 与 Stage 12 套件 T03/T04。
   - **多场景调度缺口**：`inputs["scene"]`（裁决 S-A）只支持单 scene/run；同一 workflow 内
     放 N 个 storyboard step 会都读同一个 scene（`step_id` 命名已独立）。跨场景取 scene 的
     调度机制留 Stage 12 设计。
+    ★ **已在 Stage 12 解决**：编排层改用【两段式】——`scene_gen_{sid}` 与 `storyboard_{sid}`
+    各一次 run，`inputs["scene"]` 显式放入，见 §5.7 与 Stage 12 套件 T06/T07。
   - `run_real_storyboard.py`（T31~T35，≤2 次真实文本调用）已就位但**未执行**（需人工批准 + 配置 key）。
   - 技术债 **T-6** 本轮又复现一次：跑 stage8/9/10 的嵌套回归会**连带重写 stage3** 的
     `stage3_report.json` / `stage3_console.txt`（指令 §3.2 坑 1 只列了 4 个文件）→
     复位清单应扩为 6 个。
+- **Stage 12 遗留（不影响封存）**：
+  - **真实冒烟未执行**：`run_real_lifecycle.py` **未创建、未运行**（需 `DEEPSEEK_API_KEY` +
+    人工批准）→ 真实链路连通性**未验证**。属"阻塞：需人工配置"，**未伪造**任何真实调用结果。
+    （指令 §8.1 曾将其列为新增文件，实际未产出 —— D 会话已报总控裁决。）
+  - **`T18b` 未做**：跑前后 `git status --short` 对比、把技术债 T-6 从"靠人记得"变成
+    "程序化发现" —— 属可选增强，非缺陷修复。
+  - 编排层当前只支持"编排一集"（`episode` 入参）；跨集 / 全项目批量编排留后续。
+  - 交互式人工审核 UI 未做（`auto_approve` 是程序化模拟，已在 `run_report.review_mode` 显式标注）。
+  - 真实出图（Stage 13）未做；编排层已就位，Stage 13 只需在编排层加"出图 stage"。
 - 真实异步"暂停等人工"审核流程、UI / 数据库 / 生产部署均未做。
 
 ## 7. 下一阶段
 
 ```text
-Stage 12：NOT STARTED（开工指令：`D:\AI\FilmAgent\v0.2开工指令12`，已生成）
-         = Project 生命周期 + 第一条完整业务链（Casting → Scene → Storyboard → 组装 → 审核）
+Stage 13：Image Generation（真实出图）
+          开工指令**已生成** —— `D:\AI\FilmAgent\v0.2开工指令13`
+Stage 14：VLM QA（生成图 vs 参考图 → 逐字段裁决）★2026-09-15 由总控从 Stage 13 拆出
 ```
 
-**Stage 12 目标**：把已封存的四个业务 Agent（Casting / SceneGeneration / Storyboard /
-VisualAsset）串成一条端到端的项目生命周期——多集项目从 0 到"分镜齐备 + 视觉资产齐备"，
-为 Stage 13 真实出图做调度准备。需一并解决 Stage 11 暴露的**多场景调度缺口**（见 §6）。
+**Stage 13 方向**：在 Stage 12 编排层之上接**真实图像生成**（`ImageGenerationProvider`）：
+打开 `image` 模态、实现真实文生图 Provider（厂商差异全走 Config）、新增图像专用记账与
+**预算硬护栏**，并在编排层加"出图 stage"，使每个 Shot 经 `VisualComposer` 组装 →
+真实生成图像 → 版本化落盘 → `ShotAsset(kind="image")` 挂回 Shot。
+Stage 12 已把调度底座铺好 —— 不必再动架构。
+
+★ **VLM QA 已从 Stage 13 拆出，独立为 Stage 14**（2026-09-15 总控裁决）：Stage 13 真正的
+风险面在"新模态的协议 / 成本 / 预算护栏"，本身已是一个完整阶段；QA 需**真实生成的图**作
+被测对象；合并会让验收标准模糊（出图失败还是 QA 判错？难以归因）。Stage 13 仍必须为 QA
+备好输入契约（manifest 记录 `profile_versions` 与 `reference_images` 的 sha256 锚点）。
 
 打通链路：
 
 ```text
-Stage 7 剧本 → Stage 11 分镜 → Stage 10 视觉组装 → [Stage 13 出图]
-        ↑ 已在 Stage 11 打通；Stage 12 把整条链编排成 Project 生命周期
+Stage 12 编排（Casting → Scene → Storyboard → 视觉资产齐备）
+   ↓
+Stage 13 出图（ComposedVisualInput → 真实图像；预算护栏 + 成本记账）
+   ↓
+Stage 14 VLM QA（生成图 vs 参考图 → 逐字段裁决）
+   ↓
+Stage 15 视频 → Stage 16 配音 → Stage 17 合成 → V0.2.0-alpha
 ```
 
 路线图方向（方向性参考）：
 
 ```text
-Project 生命周期（Stage 12）→ 第一集真实生成 → V0.2.0-alpha
+第一集真实生成 → V0.2.0-alpha
 ```
 
 **执行方式**：**新开一个 WorkBuddy 会话**（不要用 `claude` CLI / 终端 TUI），
 工作目录 `D:\AI\FilmAgent-main`。先读 `CLAUDE.md` → 本文件 → `HANDOFF.md`
-→ `ORCHESTRATION.md` → Stage 12 开工指令（待总控设计）
-→ 与 Stage 12 直接相关的代码。
+→ `ORCHESTRATION.md` → 最近阶段报告 `v2/logs/stage12_lifecycle/stage12_report.md`
+→ 与 Stage 13 直接相关的代码。**Stage 13 开工指令已生成**
+（`D:\AI\FilmAgent\v0.2开工指令13`）—— 开工前须先按指令 §3.0 封存 Stage 12。
 
 ## 8. V0.1 冻结规则
 
@@ -362,7 +447,8 @@ Project 生命周期（Stage 12）→ 第一集真实生成 → V0.2.0-alpha
   `Script/`、`api_key.txt`）不得修改。
 - 验收时 `git diff -- FilmAgent/` 必须为空；`FilmAgent/` 无 dirty 行。
 - 自动化断言：`v0.1^{commit}` 固定 `344c0c6…`、`v0.2-stage7` / `v0.2-stage8` /
-  `v0.2-stage9` / `v0.2-stage10` / `v0.2-stage11` tag 存在、`git diff -- FilmAgent/` 为空。
+  `v0.2-stage9` / `v0.2-stage10` / `v0.2-stage11` / `v0.2-stage12` tag 存在、
+  `git diff -- FilmAgent/` 为空。
 - 仓库根 `.gitignore` 属 V0.1 基线（commit `344c0c6`），同样 0 改；
   `v2/` 运行产物忽略规则只在 `v2/.gitignore` 内维护。
 
