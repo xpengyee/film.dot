@@ -107,6 +107,55 @@ def get_pricing(model: str) -> Optional[dict]:
 
 
 # ---------------------------------------------------------------------------
+# 图像价格配置（★ Stage 13 新增；与 token 计价**分开**，绝不混用）
+# ---------------------------------------------------------------------------
+IMAGE_PRICING: dict = {
+    # ★ 这里刻意**不登记任何图像模型价格** —— 这是护栏，不是缺陷（开工指令13 §7.3-5）：
+    #   未登记 → manifest 与图像记账里 estimated_cost = null，
+    #   **绝不允许**拿文本 token 价格冒充图像价格（两者计价单位不同）。
+    #
+    # 登记结构（"按每张 / 按尺寸"两种计价都支持）：
+    #   "<model>": {
+    #       "per_image": 0.20,                  # 每张基础价
+    #       "by_size": {"1024*1024": 0.20},     # 按尺寸覆盖 per_image（可选）
+    #       "currency": "CNY",
+    #       "note": "价格来源 + 查证日期（真账以平台为准）",
+    #   }
+    #
+    # 真实出图前，请人工把所选模型的单价填在这里；填了才会算出非 null 的成本。
+}
+
+
+def get_image_pricing(model: str) -> Optional[dict]:
+    """取某图像模型的价格配置；未登记返回 None。"""
+    return IMAGE_PRICING.get(str(model or ""))
+
+
+def estimate_image_cost(model: str, size: Optional[str] = None):
+    """按图像价格表估算**一张图**的成本。
+
+    :returns: (cost, currency)。未登记 / 价格字段不全 → (None, "")。
+              ★ 返回 None 表示"无法估算"，调用方必须如实记 null，
+              绝不用文本 token 价格冒充（§7.3-5）。
+    """
+    pricing = IMAGE_PRICING.get(str(model or ""))
+    if not pricing:
+        return None, ""
+    currency = str(pricing.get("currency", "") or "")
+    key = str(size or "")
+    by_size = pricing.get("by_size") or {}
+    if key and key in by_size:
+        val = by_size[key]
+        if val is None:
+            return None, currency
+        return round(float(val), 8), currency
+    per = pricing.get("per_image")
+    if per is None:
+        return None, currency
+    return round(float(per), 8), currency
+
+
+# ---------------------------------------------------------------------------
 # Provider 配置注册表（Stage 9 加法；不改动上面任何既有导出）
 # ---------------------------------------------------------------------------
 # 目标（stage9_plan §13）：给 Config 增加"供应商/Provider"维度，接百炼或本地模型时
@@ -169,6 +218,17 @@ PROVIDERS: dict = {
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
         "default_model": "", "api_key_env": "BAILIAN_API_KEY", "pricing": None,
     },
+    # ★ Stage 13 新增：文生图档（厂商差异全部落在这里，代码里不出现任何具体模型名）。
+    #   真实出图前置四项（人工）：填 default_model + 注入 BAILIAN_API_KEY + 明确批准 + 确认预算。
+    "bailian_image": {
+        "kind": "image", "vendor": "bailian",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "default_model": "",              # 用户 Config 填（具体型号由人工决定，绝不硬编码）
+        "api_key_env": "BAILIAN_API_KEY",
+        "pricing": None,                  # 图像价格走 IMAGE_PRICING（与 token 价分开）
+        "size_separator": "x",            # canonical "1024*1024" → 线上协议 "1024x1024"
+        "default_size": "1024*1024",      # 缺省尺寸（实际由编排层 run_spec 显式传）
+    },
 }
 
 
@@ -225,6 +285,9 @@ __all__ = [
     "api_key_masked",
     "PRICING",
     "get_pricing",
+    "IMAGE_PRICING",
+    "get_image_pricing",
+    "estimate_image_cost",
     "FILMAGENT_PROVIDER",
     "PROVIDER_ENV_API_KEYS",
     "PROVIDERS",

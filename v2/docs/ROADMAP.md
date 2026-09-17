@@ -3,7 +3,7 @@
 > 回答"后面要去哪、以及**为什么是这个顺序**"。总控据此判断下一阶段；
 > 执行会话不需要读本文件（读 `CLAUDE.md` + `HANDOFF.md` + 本阶段开工指令即可）。
 >
-> 最后更新：Stage 13 开工指令生成后（VLM QA 已拆为独立 Stage 14）。
+> 最后更新：Stage 13 交付后（图像链路代码/测试/报告已就位，待人工验收；VLM QA 为独立 Stage 14）。
 
 ---
 
@@ -20,7 +20,7 @@ V0.1 是"已跑通但不可维护的串行脚本"，V0.2 是"工程化的多智�
 ## 2. 路线图全景（当前视角）
 
 ```text
-                    ┌─── 已完成（Stage 0–12）────────────────────────────┐
+                    ┌─── 已完成（Stage 0–13）────────────────────────────┐
                     │ 0-1 骨架 / 数据模型 / Validator / Assets           │
                     │ 2   LLMClient / Token·Cost                         │
                     │ 3   Workflow Engine / Step / Artifact 版本化        │
@@ -33,10 +33,10 @@ V0.1 是"已跑通但不可维护的串行脚本"，V0.2 是"工程化的多智�
                     │ 10  Visual Asset 层（视觉身份 / 版本 / 参考图 / 组装）│
                     │ 11  StoryboardAgent（Shot 规划：Scene→Beat→Shot）    │
                     │ 12  编排层 ProjectOrchestrator（第一条端到端业务链） │
+                    │ 13  Image Generation（真实出图：image 模态 + 预算护栏）│
                     └───────────────────────────────────────────────────┘
                      ↓ 当前位置
-                    ┌─── 规划中（Stage 13+）─────────────────────────────┐
-                    │ 13  Image Generation（真实出图；开工指令已生成）     │
+                    ┌─── 规划中（Stage 14+）─────────────────────────────┐
                     │ 14  VLM QA（生成图 vs 参考图 → 逐字段裁决）★见下注  │
                     │ 15  Video Generation（图 → 视频）                   │
                     │ 16  Audio / TTS（配音）                             │
@@ -97,13 +97,20 @@ Stage 16 Audio / TTS               →  Stage 17 Assembly → V0.2.0-alpha
 ## 4. 当前格位
 
 ```text
-当前：Stage 12 已封存（`v0.2-stage12`）；无技术阻塞
-下一阶段：Stage 13 —— Image Generation（真实出图；VLM QA 已拆到 Stage 14）
-          开工指令：`D:\AI\FilmAgent\v0.2开工指令13`（**已生成**）
-阻塞：无技术阻塞。Stage 12 已解决 Stage 11 暴露的两点（多场景调度缺口 → 两段式；
-      上游 Scene 校验前置 → preflight 门），见 PROJECT_STATUS.md §5.7 / §6。
-      Stage 12 遗留（不影响封存）：真实冒烟 `run_real_lifecycle.py` 未创建未执行
-      （需 key + 人工批准）→ ★总控裁决：并入 Stage 13 §13 一并执行。
+当前：Stage 13（Image Generation 真实出图）**代码/测试/报告已交付，待人工验收 + commit/tag**
+      —— `image` 模态已开通（mock + 真实 OpenAI 兼容档）；编排层新增 image 段；
+      三重护栏（默认不出图 / 预算硬上限 / 绝不伪造出图）与图像独立记账就位。
+      ★ 真实出图**未执行**（人工四项前置未齐 → 如实报告阻塞，不用占位图冒充）。
+下一阶段：Stage 14 —— VLM QA（生成图 vs 参考图 → 按 approved 档案字段逐项裁决）
+          Stage 13 已备好输入契约：manifest 记录 profile_versions + reference_images(sha256)
+阻塞：无技术阻塞。
+      Stage 13 遗留（不影响交付，详见 stage13_report.md §遗留）：
+        ① 目标厂商（百炼兼容模式）是否完整支持 OpenAI `/images/generations` **未能从公开文档核实**
+           → 首次真实调用前需人工确认；若协议差异过大，注入厂商 transport 即可（不动架构）。
+        ② `config.IMAGE_PRICING` 为空表 → 真实出图的 estimated_cost 记 null（护栏，非缺陷）。
+        ③ 单次 run 出图数被收紧为 min(max_images, MAX_REAL_IMAGE_REQUESTS=3)（见技术债 T-8）。
+        ④ Stage 12 遗留的 `run_real_lifecycle.py` 已并入本阶段真实冒烟脚本
+           `v2/logs/stage13_image/run_real_image.py`（已就位，未执行）。
 ```
 
 ---
@@ -117,7 +124,14 @@ Stage 16 Audio / TTS               →  Stage 17 Assembly → V0.2.0-alpha
 | T-3 | 成本为 `null`（`PROVIDERS["bailian_vision"]["pricing"]=None` 护栏） | 真实视觉调用无成本记账 | 在 `config.PRICING` 登记 qwen3.7-plus 价格即可（无需改业务代码） | 已登记，未修 |
 | T-4 | 真实冒烟脚本 `run_real_visual_extraction.py` 未调用 `add_reference_image()` | 真实链路不落 checksum 锚点（0 API 本地测试 T06b 已完整证明该链路） | 可选增强，一行改动 | 已登记，未修 |
 | T-5 | 人工审核目前是程序化 decision 模拟，交互式审核界面未做 | 无法真人实操审核 | 待业务链打通后立项（Stage 12 已打通链路，仍未立项） | 已登记，未修 |
-| T-6 | `stage3/stage4/stage6/stage7_report.json`（及 `stage3/stage4_console.txt`）每次回归都会被重写（含随机 id）产生 Git dirty | 交付前需 `git checkout --` 复位**6 个文件**，易误提交 | 可让套件写固定/可复现 id，或把报告移出跟踪 | 已登记，未修（Stage 12-D 未从仓库根跑测试，故本轮无需复位；跑 stage8~12 的嵌套回归仍会连带重写 stage3 的两个产物。可选增强 `T18b`——程序化发现该 dirty——**未做**） |
+| T-6 | `stage3/stage4/stage6/stage7_report.json`（及 `stage3/stage4_console.txt`）每次回归都会被重写（含随机 id）产生 Git dirty | 交付前需 `git checkout --` 复位**6 个文件**，易误提交 | 可让套件写固定/可复现 id，或把报告移出跟踪 | 已登记；★**Stage 13 已缓解**：stage13 套件在 `main()` 起始与 `run_history()` 前后**自动复位**这 6 个文件（`_reset_history_products()`），跑完工作区保持干净 |
+| T-7 | ★**图像是二进制大文件**：生成的真实图片一旦入库，仓库迅速膨胀且无法回退 | 单次误 `git add` 即污染版本库 | Stage 13 已补 `v2/.gitignore` 规则 + 交付前二进制扫描 | ★**Stage 13 已落地防护**：§8.4 六条规则 + 套件 T15（`git check-ignore` 命中 / `git status` 无图片 / `v2/` 无二进制入库）；仓库根 `.gitignore` 仍 0 改 |
+| T-8 | 单次 run 出图数被收紧为 `min(run_spec["max_images"], MAX_REAL_IMAGE_REQUESTS=3)`：**`max_images` 只能调小、不能调大** | 需要一次出图 >3 张时无法通过 run_spec 提高（须改 `request_counter.py` 的常量） | 若业务确需更高上限，由总控评估后调整常量（并同步更新 stage13 套件 T06f 断言） | 已登记（属**安全默认**，非缺陷；run_report 同时记 `max_images_requested` 与 `budget_cap`，不误导） |
+| T-9 | ★**目标厂商协议未核实**：无法从公开文档确认百炼兼容模式完整支持 OpenAI `POST /images/generations`（返回 b64/url、是否异步轮询） | 首次真实出图可能因协议差异失败 | 首次真实调用前人工确认；若差异过大，**注入厂商 transport**（不动接口签名/架构） | 已登记（已写入 `run_real_image.py` 体检项与 `stage13_report.md` 遗留） |
+| T-10 | `config.IMAGE_PRICING` 为空表 → 真实出图的 `estimated_cost` 恒为 `null` | 真实出图无成本记账数字 | 人工在 `config.IMAGE_PRICING` 登记所选模型的单价即可（无需改业务代码） | 已登记（属**护栏**，非缺陷：绝不用 token 价冒充图像价） |
+| T-11 | `manifest.json` 落在 `v2/projects/<pid>/generated_images/`，而 `v2/.gitignore` 的 `projects/` 整目录规则使其**不会入库**（与 §8.4「manifest 保留为结构化证据」的表述有张力） | 真实运行的 manifest 不作为仓库证据留存 | 真实冒烟脚本已把 manifest **副本（无二进制）** 落到 `v2/logs/stage13_image/real_run/manifest_copy.json` | 已登记（处置见 stage13_report.md §裁决点） |
+| T-12 | 图像审核遇 `approved_with_edit` 直接抛 `OrchestrationError`（图像是二进制，无"编辑后内容"的确定性来源） | 无法对生成图做"编辑后通过" | 图像编辑属未立项能力（§4.4）；如需，应先有"图像编辑 Provider" | 已登记（fail-loud 优于静默猜，与 Stage 12 视觉资产裁决 2 同源） |
+| T-13 | ★**历史回归的嵌套成本呈指数级**：每个后期套件的 `run_history()` 会跑全部前序套件，而前序套件自身也在内嵌（stage12→stage1..11，stage11→stage1..10，stage10→stage1..9…）。stage13 的 T18 内嵌 10 套 → 一次全量复跑实测 **≈58 分钟**（约 70 次套件执行） | 日常回归慢；CI 化不可行 | 可选：①各套件加"跳过自身嵌套回归"的环境开关（需改历史套件，属禁改 → 需总控授权）；②T18 改为并行子进程（各套件目录互不重叠，但共享 `v2/llm_calls.jsonl` 与 6 个报告产物 → 有竞态风险）；③把历史回归改为 CI 分层 | 已登记，未修（Stage 13 如实记录实测耗时） |
 
 ---
 
@@ -126,9 +140,12 @@ Stage 16 Audio / TTS               →  Stage 17 Assembly → V0.2.0-alpha
 **接口/ Schema 已就位但无真实实现**：
 
 ```text
-ImageGenerationProvider / VideoGenerationProvider / AudioProvider   预留接口，调用即 NotImplementedError
-真实图片生成 / 真实视频生成 / TTS                                   未实现（真实出图 = Stage 13）
-VLM QA Agent（生成图 vs 参考图对比）                                未实现（Visual Asset 已备好 ground truth）
+VideoGenerationProvider / AudioProvider                            预留接口，调用即 NotImplementedError
+真实图片生成（真实调用）                                             ★Stage 13 已实现代码，**真实调用未执行**
+                                                                    （需人工四项前置；Mock 路径已跑通）
+真实视频生成 / TTS                                                  未实现（Stage 15 / 16）
+VLM QA Agent（生成图 vs 参考图对比）                                未实现（Stage 14；Stage 13 已备好输入契约）
+图生图 / 局部重绘 / 多图合成 / 图像编辑                              未立项
 向量库 / Embedding 检索接入                                        未做
 本地模型（Ollama / vLLM / 权重）                                   未下载、未部署
 交互式人工审核 UI / 数据库 / 生产部署                               未做
@@ -139,12 +156,17 @@ VLM QA Agent（生成图 vs 参考图对比）                                �
 
 ```text
 Mock Provider 四件套（Text/Vision/Multimodal/Embedding）           ✅ 测试用，0 成本
+MockImageGenerationProvider（Stage 13）                            ✅ 确定性最小合法 PNG（纯 stdlib），0 网络 0 成本
 OpenAICompatibleTextProvider（deepseek 档）                        ✅ 接口就位（真实调用需配置）
 BailianTextProvider                                                ✅ 接口就位（default_model 空 = 护栏）
 OpenAICompatibleVisionProvider（bailian 档）                       ✅ **已真实跑通 3 次**（qwen3.7-plus，2026-09-13）
+OpenAICompatibleImageProvider（Stage 13，bailian_image 档）         ✅ 接口就位（b64/url 两路 + 计数点 + transport 可注入）
+                                                                    ❌ 真实调用 0 次（default_model 空 = 护栏）
 StoryboardAgent                                                    ✅ **已实现（Stage 11）**：agents/storyboard.py
 编排层 ProjectOrchestrator                                          ✅ **已实现（Stage 12）**：v2/orchestration/
                                                                       （preflight / state / pipeline；★ v2/workflow/ 0 diff + 0 新增）
+图像段 ImageStage                                                   ✅ **已实现（Stage 13）**：v2/orchestration/image_stage.py
+                                                                      （compose→出图→落盘→manifest→记账→Review→挂回→新版本）
 ```
 
 ---
@@ -161,13 +183,18 @@ StoryboardAgent                                                    ✅ **已实�
 
 各阶段实际消耗（累计）：
 
-| 阶段 | 真实视觉 | 真实文本 | 成本 |
-|---|---|---|---|
-| 0–9 | 0 | 0（测试） | ¥0.00 |
-| 10-B | **3**（qwen3.7-plus，14,433 tokens，Retry=0） | 0 | null（价格未登记，T-3） |
-| 10-C | 0 | 0 | ¥0.00 |
-| 11（A–D） | 0 | **0**（全 Mock；真实脚本已就位未执行） | ¥0.00 |
-| 12（A–D） | 0 | **0**（全 Mock；`run_real_lifecycle.py` 未创建未执行） | ¥0.00 |
+| 阶段 | 真实图像 | 真实视觉 | 真实文本 | 成本 |
+|---|---|---|---|---|
+| 0–9 | 0 | 0 | 0（测试） | ¥0.00 |
+| 10-B | 0 | **3**（qwen3.7-plus，14,433 tokens，Retry=0） | 0 | null（价格未登记，T-3） |
+| 10-C | 0 | 0 | 0 | ¥0.00 |
+| 11（A–D） | 0 | 0 | **0**（全 Mock；真实脚本已就位未执行） | ¥0.00 |
+| 12（A–D） | 0 | 0 | **0**（全 Mock；`run_real_lifecycle.py` 未创建未执行） | ¥0.00 |
+| 13（A–D） | **0**（`run_real_image.py` 已就位未执行；人工四项前置未齐 → 如实报告阻塞） | 0 | **0**（全 Mock，`FILMAGENT_PROVIDER` 未设） | ¥0.00 |
+
+★ Stage 13 是**第一个图像计费入口**：一旦人工批准真实出图，成本将按所选模型单价计
+（须先在 `config.IMAGE_PRICING` 登记，否则 `estimated_cost` 记 null）。三重护栏：
+默认不出图 / 预算硬上限（单 run ≤ `min(max_images, 3)`）/ 绝不伪造出图。
 
 ---
 

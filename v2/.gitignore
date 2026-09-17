@@ -37,6 +37,17 @@ logs/**/image_generation_calls.jsonl
 llm_calls.jsonl
 **/llm_calls.jsonl
 
+# ---------- ★ Stage 13 图像产物（二进制大文件，绝不进版本库） ----------
+# 生成的真实图片是二进制大文件：一旦入库仓库迅速膨胀且无法回退。
+# 保留（**不忽略**）：manifest.json（结构化证据）、脚本、报告、结构化 JSON。
+logs/**/generated_images/
+logs/**/images/
+logs/**/tmp_*/generated_images/
+**/generated_images/*.png
+**/generated_images/*.jpg
+**/generated_images/*.jpeg
+**/generated_images/*.webp
+
 # Python 运行时缓存（根 .gitignore 已覆盖，这里冗余自包含）
 __pycache__/
 *.py[cod]

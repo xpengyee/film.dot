@@ -29,6 +29,15 @@ from llm.providers.openai_compatible_vision import (
     OpenAICompatibleVisionProvider,
     OpenAICompatibleMultimodalProvider,
 )
+from llm.providers.mock_image import (
+    MockImageGenerationProvider,
+    encode_png,
+    png_data_url,
+)
+from llm.providers.openai_compatible_image import (
+    OpenAICompatibleImageProvider,
+    ImageGenerationError,
+)
 from llm.providers.bailian import BailianTextProvider
 from llm.providers.registry import (
     create_provider,
@@ -55,6 +64,11 @@ __all__ = [
     "OpenAICompatibleTextProvider",
     "OpenAICompatibleVisionProvider",
     "OpenAICompatibleMultimodalProvider",
+    "MockImageGenerationProvider",
+    "OpenAICompatibleImageProvider",
+    "ImageGenerationError",
+    "encode_png",
+    "png_data_url",
     "BailianTextProvider",
     "create_provider",
     "get_default_provider",

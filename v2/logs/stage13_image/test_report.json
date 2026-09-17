@@ -1,0 +1,646 @@
+{
+  "suite": "stage13_image",
+  "real_api_requests": 0,
+  "results": [
+    {
+      "name": "T01a Mock/真实图像 Provider 的 generate_image 签名与 base 一致",
+      "ok": true,
+      "detail": "base=['self', 'prompt', 'size', 'reference']"
+    },
+    {
+      "name": "T01b kind/vendor 正确（mock / 真实类）",
+      "ok": true,
+      "detail": "mock.kind=image"
+    },
+    {
+      "name": "T01c 二者都是 ImageGenerationProvider 子类（抽象身份成立）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T01d ImageGenerationError 归属既有错误家族（可区分来源，铁律 9）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T01e ★下层不得 import orchestration（反向扫 0 命中）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T01f orchestration 的 import 仍只落在允许的下层",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02a kind='image' 现在可造（mock 分支）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02b ★video / audio 仍然被拒绝（护栏未被误开）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02c 缺省 vendor 的 image 仍拒绝（与 vision 既有范式一致）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02d 真实 image 档 default_model 为空 → 明确报错护栏",
+      "ok": true,
+      "detail": "create_provider(kind='image', vendor='bailian')：生成类 Provider（image）已开通，但 config.PROVIDERS["
+    },
+    {
+      "name": "T02e 未登记图像 vendor → 明确报错",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02f 环境开关缺省 → get_default_provider('image') 得 Mock（0 API）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T02g image 预算桶已登记且与 vision 同量级",
+      "ok": true,
+      "detail": "budgets={'vision': 3, 'image': 3}"
+    },
+    {
+      "name": "T02h config 新增 bailian_image 档 + 图像价格表（未登记 → 空表护栏）",
+      "ok": true,
+      "detail": "IMAGE_PRICING={}"
+    },
+    {
+      "name": "T03a 确定性：同入参两次调用字节完全一致",
+      "ok": true,
+      "detail": "len=176"
+    },
+    {
+      "name": "T03b 不同 prompt → 不同字节（使多镜头/sha256 断言真有区分度）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03c 产出是合法 PNG（魔数 + IHDR 尺寸）",
+      "ok": true,
+      "detail": "magic=b'\\x89PNG\\r\\n\\x1a\\n'"
+    },
+    {
+      "name": "T03d 可算 sha256（64 hex）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03e 引用串是 data URL（Provider 不决定落盘文件名/版本）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03f ★0 网络（socket 打桩下仍正常出图）",
+      "ok": true,
+      "detail": "no_network() 全程生效"
+    },
+    {
+      "name": "T03g prompt 为空 → 明确报错（本地校验，不消耗预算）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T03h encode_png/png_data_url 工具可直接用（纯 stdlib，无第三方依赖）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T04a ★默认 generate_images=False → 零 Provider 调用",
+      "ok": true,
+      "detail": "calls=0"
+    },
+    {
+      "name": "T04b ★零图像文件（连目录都不建）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T04c 零记账行（不写 image_generation_calls.jsonl）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T04d 零 manifest",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T04e run_report 如实记录（enabled=False + 原因）",
+      "ok": true,
+      "detail": "skipped_reason=generate_images=False（缺省安全默认：不出图就不花钱）"
+    },
+    {
+      "name": "T04f 默认关闭时不影响原编排结果（status=success，无 errors）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05a 单 Shot → 1 张图（请求 1 / 生成 1 / 失败 0）",
+      "ok": true,
+      "detail": "rep=1/1/0"
+    },
+    {
+      "name": "T05b 图像真实落盘（generated_images/GEN_001.png）",
+      "ok": true,
+      "detail": "['GEN_001.png']"
+    },
+    {
+      "name": "T05c manifest 记录完整（id/shot_ref/sha256/size/profile_versions）",
+      "ok": true,
+      "detail": "entry={'image_id': 'GEN_001', 'shot_ref': 'S1_B1_SH1', 'status': 'generated', 'size': '1024*1024'}"
+    },
+    {
+      "name": "T05d ShotAsset(kind='image') 已挂回 Shot",
+      "ok": true,
+      "detail": "assets=[{'kind': 'image', 'ref': 'GEN_001', 'detail': '1024*1024 b7cb82184982'}]"
+    },
+    {
+      "name": "T05e ★产生 Storyboard 新版本（storyboard_1_v2.json）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05f ★原 Storyboard 文件字节不变（绝不覆盖）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T05g 新版本里只有出图的那个 Shot 带 image asset",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06a 3 个 Shot → 3 张图（请求=生成=3）",
+      "ok": true,
+      "detail": "req=3 gen=3"
+    },
+    {
+      "name": "T06b ★manifest 生成条数 == 磁盘图像文件数",
+      "ok": true,
+      "detail": "manifest=3 disk=3"
+    },
+    {
+      "name": "T06c 3 张图 sha256 互不相同（多镜头真有区分度）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06d 两份 Storyboard 各自产生新版本（不串场）",
+      "ok": true,
+      "detail": "['storyboard_1_v2.json', 'storyboard_2_v2.json']"
+    },
+    {
+      "name": "T06e 图像 ID 单调且无重复",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T06f ★max_images 高于真实请求硬上限时被收紧（cap = min(max_images, MAX_REAL_IMAGE_REQUESTS)，防止一次 run 无上限烧钱）",
+      "ok": true,
+      "detail": "requested=6 cap=3"
+    },
+    {
+      "name": "T07a 请求 3 个 Shot、上限 2 → 生成 2 / 拒绝 1",
+      "ok": true,
+      "detail": "3/2/1"
+    },
+    {
+      "name": "T07b ★实际 Provider 调用数 == 2（第 3 次**未发出**）",
+      "ok": true,
+      "detail": "calls=2 budget_used=2"
+    },
+    {
+      "name": "T07c 预算上限如实记录（budget_cap=2，budget_rejections=1）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T07d 被拒条目带 APIBudgetExceededError 且无 path/sha256（不伪造产物）",
+      "ok": true,
+      "detail": "error=APIBudgetExceededError: Real image API request budget exceeded: max=2"
+    },
+    {
+      "name": "T07e 磁盘图像数 == 2（被拒的那张没有文件）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T07f 记账条数 == 实际调用数 == 2（被拒的没发出，不进账）",
+      "ok": true,
+      "detail": "2"
+    },
+    {
+      "name": "T07g 上限同时下推到真实 HTTP 层（counter image 桶预算已被收紧）",
+      "ok": true,
+      "detail": "remaining=2"
+    },
+    {
+      "name": "T07h ★真实 HTTP 层：预算=2 时只发出 2 次即被 APIBudgetExceededError 拒绝",
+      "ok": true,
+      "detail": "sent=2 real=2"
+    },
+    {
+      "name": "T08a 瞬时失败重试 2 次 → 共 3 次真实请求（按 HTTP 请求计预算）",
+      "ok": true,
+      "detail": "sent=3 real=3"
+    },
+    {
+      "name": "T08b 审计记录 attempt 1/2/3 且 is_real=True",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T08c 审计不含 prompt 正文 / 不含 API key",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T08d ★预算耗尽后不再重试（发出数 == 预算数）",
+      "ok": true,
+      "detail": "sent=2"
+    },
+    {
+      "name": "T08e base64 形态返回 data URL 引用",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T08f URL 形态原样返回（下载由编排层负责）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T08g 无图片载体 → ImageGenerationError（不可重试）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T08h 本地校验失败（空 prompt）不消耗真实预算",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T08i size 归一化走 Config（canonical 1024*1024 → 线上 1024x1024）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T08j 模型名为空 → 构造即明确报错（配置护栏，不硬编码模型名）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09a APPROVED → 挂回 Shot + 计入 images_generated",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09b ★auto_approve 在 run_report 中标注程序化模拟（不伪造人工审核）",
+      "ok": true,
+      "detail": "review_mode=auto_approve (programmatic, NOT human review)"
+    },
+    {
+      "name": "T09c REJECTED → 不挂回 Shot",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09d REJECTED → 仍保留 manifest 记录（可追溯，不静默丢弃）",
+      "ok": true,
+      "detail": "status=rejected"
+    },
+    {
+      "name": "T09e REJECTED → 不产生 Storyboard 新版本（没挂回就没改动）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T09f APPROVED_WITH_EDIT → 明确 OrchestrationError（不隐式解释）",
+      "ok": true,
+      "detail": "图像 GEN_001 的审核决策为 approved_with_edit：本阶段不支持（图像是二进制产物，没有'编辑后内容'的确定性来源）。请改为 approv"
+    },
+    {
+      "name": "T10a ★manifest 每条 sha256 == 磁盘文件实际 sha256（逐一相符）",
+      "ok": true,
+      "detail": "checked=3 bad=[]"
+    },
+    {
+      "name": "T10b 落盘路径形如 generated_images/GEN_xxx.png（项目相对）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10c ★manifest 为 Stage 14 VLM QA 备好溯源锚点（profile_versions + reference_images 字段齐备）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T10d prompt 正文不入库（只记 prompt_hash + prompt_length）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T11a ★compose 缺 approved 档案 → 明确报错并列出缺口（不硬出图）",
+      "ok": true,
+      "detail": "gen=0 failed=2"
+    },
+    {
+      "name": "T11b 报错信息含缺口说明（风格缺失）",
+      "ok": true,
+      "detail": "VisualComposeError: 镜头 S1_B1_SH1 无法解析项目默认风格（style_override / default_style_asset"
+    },
+    {
+      "name": "T11c ★零 Provider 调用（缺档案时根本不进 Provider）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T11d 零图像文件（不产生占位图冒充）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T11e 角色无 approved 档案 → 同样明确报错列缺口",
+      "ok": true,
+      "detail": "[\"VisualComposeError: 镜头 S1_B1_SH1 存在 1 个视觉缺口（无 approved 档案）：['character\", \"VisualComposeError: 镜头 S1_B1_SH2 存在 1 个视觉缺口（无 approved 档案）：['character\"]"
+    },
+    {
+      "name": "T12a ★记账条数 == 实际 Provider 调用数",
+      "ok": true,
+      "detail": "ledger=3 calls=3"
+    },
+    {
+      "name": "T12b ★未登记价格 → estimated_cost 为 null（非 0、非编造）",
+      "ok": true,
+      "detail": "[None, None, None]"
+    },
+    {
+      "name": "T12c run_report 的 cost_total 为 null 且如实标注未定价张数",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T12d 记账字段风格与 TokenLogger 对齐（不造第二套账、不含 token 概念）",
+      "ok": true,
+      "detail": "keys=['agent', 'currency', 'duration_ms', 'error', 'estimated_cost', 'image_id', 'model', 'path', 'profile_versions', 'prompt_hash', 'prompt_length', 'provider', 'reference_images', 'request_id', 'retry_count', 'sha256', 'shot_ref', 'size', 'status', 'step', 'success', 'timestamp']"
+    },
+    {
+      "name": "T12e 记账含图像专属溯源字段（image_id/shot_ref/sha256/profile_versions）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T12f 记账与 token 账分开（图像调用不写 llm_calls.jsonl）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T12g 记账文件被 git 忽略（运行产物，不进版本库）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T13a ★真实 API 请求 = 0（程序化快照断言）",
+      "ok": true,
+      "detail": "real=0"
+    },
+    {
+      "name": "T13b 全程 socket 打桩下跑通（证明 0 网络）",
+      "ok": true,
+      "detail": "status=success"
+    },
+    {
+      "name": "T13c 未设 FILMAGENT_PROVIDER 时图像档默认 mock",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T13d 审计里没有任何 is_real=True 的记录",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T14a ★未参与出图的 Shot 序列化逐字段不变",
+      "ok": true,
+      "detail": "changed=[1] untouched=[2]"
+    },
+    {
+      "name": "T14b ★出图的 Shot 只多一个 kind='image' 的 ShotAsset（无其它字段变化）",
+      "ok": true,
+      "detail": "diffs={1: ['assets']}"
+    },
+    {
+      "name": "T14c 只多一条 image asset（不是两条 / 不重复挂）",
+      "ok": true,
+      "detail": "added=[{'kind': 'image', 'ref': 'GEN_001', 'detail': '1024*1024 b7cb82184982'}]"
+    },
+    {
+      "name": "T14d ★档案文本不渗漏进 Storyboard（token 增长只发生在真正调用模型那一刻）",
+      "ok": true,
+      "detail": "leaked=[]"
+    },
+    {
+      "name": "T14e 原 Storyboard 文件字节不变",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T15a ★生成的图片文件全部被 git 忽略（check-ignore 命中）",
+      "ok": true,
+      "detail": "未忽略=[]"
+    },
+    {
+      "name": "T15b 交付目录无二进制泄漏（git status 无图片文件）",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "T15c v2/ 下没有任何二进制图片入库",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "T15d 仓库根 .gitignore 0 diff（仍属 V0.1 基线段）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T15e v2/.gitignore 已补齐 §8.4 全部二进制防护规则",
+      "ok": true,
+      "detail": "missing=[]"
+    },
+    {
+      "name": "T16a compileall v2/orchestration + v2/llm/providers 全过",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16b import 冒烟 + 新导出齐备",
+      "ok": true,
+      "detail": "orch=15 llm=42"
+    },
+    {
+      "name": "T16c 新增/改动文件无**新增**硬编码密钥字样（与 HEAD 逐行对比；既有说明性文字不计）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16d ★无硬编码图像模型名（扫具体型号字样 0 命中）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T16e 受控词表未被加值（stage8 封存前提）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T17a 禁改清单 0 diff（§8.3 + FilmAgent/ + 仓库根 .gitignore）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T17b ★v2/workflow/ + v2/core/ 0 diff + 0 新增（未污染封存层）",
+      "ok": true,
+      "detail": "status=''"
+    },
+    {
+      "name": "T17c 既有 tag 未被移动/删除（v0.1 与 v0.2-stage7..12 都在）",
+      "ok": true,
+      "detail": "tags=['v0.1', 'v0.2-stage10', 'v0.2-stage11', 'v0.2-stage12', 'v0.2-stage7', 'v0.2-stage8', 'v0.2-stage9']"
+    },
+    {
+      "name": "T17d V0.1 冻结：git diff -- FilmAgent/ 为空",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19a status=success（分镜 + 视觉资产 + 出图全链跑通）",
+      "ok": true,
+      "detail": "status=success errors=[]"
+    },
+    {
+      "name": "T19b run_report.image 段统计正确（请求 2 / 生成 2 / 拒绝 0）",
+      "ok": true,
+      "detail": "2/2/0/0"
+    },
+    {
+      "name": "T19c budget_used == 磁盘图像数 == Provider 实际调用数",
+      "ok": true,
+      "detail": "used=2 disk=2 calls=2"
+    },
+    {
+      "name": "T19d manifest 落盘且路径在 run_report 里可追溯",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19e 每个成功出图的 Shot 都挂上了 image 引用（两场景各 1 个）",
+      "ok": true,
+      "detail": "per_scene={1: 1, 2: 1}"
+    },
+    {
+      "name": "T19f state.json 记录图像段进度（纯追加字段，未新建第二套状态机）",
+      "ok": true,
+      "detail": "images={'status': 'approved', 'artifact': 'storyboard_1_v2.json', 'attempts': 0, 'run_id': '', 'workflow_id': '', 'images_generated': 1, 'budget_used': 2, 'budget_cap': 2}"
+    },
+    {
+      "name": "T19g ★resume 重跑不重复出图（零新调用，已生成的记 skipped）",
+      "ok": true,
+      "detail": "calls=0 skipped=2 generated=0"
+    },
+    {
+      "name": "T19h 重跑仍把已生成的引用挂回（Storyboard 新版本可用）",
+      "ok": true,
+      "detail": "v3=['storyboard_1.json', 'storyboard_1_v2.json', 'storyboard_1_v3.json']"
+    },
+    {
+      "name": "T19i resume 不新增图像文件（零新产物）",
+      "ok": true,
+      "detail": "disk=2"
+    },
+    {
+      "name": "T19j URL 形态引用经注入下载器落盘（下载可注入 → 0 网络可测）",
+      "ok": true,
+      "detail": "generated=2 fetched=2"
+    },
+    {
+      "name": "T19k 下载失败 → 明确报错（不静默留空文件）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T19l 引用串解析：data URL / http / 本地路径 三路都认",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage1 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage3 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage4 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage6 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage7 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage8 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage9 历史回归全绿",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T18-stage10 历史回归全绿",
+      "ok": true,
+      "detail": "仅 pre-commit 禁改护栏未过（Stage 13 依 §8.2 合法修改 v2/llm + v2/config.py；commit 后归零）: [FAIL] T15b config.py 预期 0 改（bailian_vision 槽位既有）"
+    },
+    {
+      "name": "T18-stage11 历史回归全绿",
+      "ok": true,
+      "detail": "仅 pre-commit 禁改护栏未过（Stage 13 依 §8.2 合法修改 v2/llm + v2/config.py；commit 后归零）: [FAIL] T17 禁改文件 0 diff（§8.3 硬清单 + FilmAgent/ + 仓库根 .gitignore）  ->  有改动: ['v2/llm'] | [FAIL] T19-stage10 历史回归全绿  ->  TOTAL: 75/76 passed;   FAIL: T15b config.py 预期 0 改（bailian_vision 槽位既有）  ->  ; "
+    },
+    {
+      "name": "T18-stage12 历史回归全绿",
+      "ok": true,
+      "detail": "仅 pre-commit 禁改护栏未过（Stage 13 依 §8.2 合法修改 v2/llm + v2/config.py；commit 后归零）: [FAIL] T16 禁改清单 0 diff（§8.3 + FilmAgent/ + 仓库根 .gitignore）  ->  有改动: ['v2/llm'] | [FAIL] T18-stage10 历史回归全绿  ->  TOTAL: 75/76 passed;   FAIL: T15b config.py 预期 0 改（bailian_vision 槽位既有）  ->  ;  | [FAIL] T18-stage11 历史回归全绿  ->    FAIL: T17 禁改文件 0 diff（§8.3 硬清单 + FilmAgent/ + 仓库根 .gitignore）  ->  有改动: "
+    }
+  ],
+  "passed": 126,
+  "total": 126,
+  "excused_history_fails": [
+    "stage10: [FAIL] T15b config.py 预期 0 改（bailian_vision 槽位既有）",
+    "stage11: [FAIL] T17 禁改文件 0 diff（§8.3 硬清单 + FilmAgent/ + 仓库根 .gitignore）  ->  有改动: ['v2/llm']",
+    "stage11: [FAIL] T19-stage10 历史回归全绿  ->  TOTAL: 75/76 passed;   FAIL: T15b config.py 预期 0 改（bailian_vision 槽位既有）  ->  ; report -> D:\\AI\\FilmAgent-main\\v2\\logs\\stage10_visual_asset\\test_report.json",
+    "stage12: [FAIL] T16 禁改清单 0 diff（§8.3 + FilmAgent/ + 仓库根 .gitignore）  ->  有改动: ['v2/llm']",
+    "stage12: [FAIL] T18-stage10 历史回归全绿  ->  TOTAL: 75/76 passed;   FAIL: T15b config.py 预期 0 改（bailian_vision 槽位既有）  ->  ; report -> D:\\AI\\FilmAgent-main\\v2\\logs\\stage10_visual_asset\\test_report.json",
+    "stage12: [FAIL] T18-stage11 历史回归全绿  ->    FAIL: T17 禁改文件 0 diff（§8.3 硬清单 + FilmAgent/ + 仓库根 .gitignore）  ->  有改动: ['v2/llm'];   FAIL: T19-stage10 历史回归全绿  ->  TOTAL: 75/76 passed;   FAIL: T15b config.py 预期 0 改（bailian_vision 槽位既有）  ->  ; report -> D:\\AI\\FilmAge"
+  ]
+}

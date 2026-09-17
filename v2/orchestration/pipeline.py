@@ -39,6 +39,18 @@ resume 语义（裁决 6 / stage12_plan §2.6）：对已 approved 的单元**�
 诚实性（AC13）：`auto_approve` / `scripted` 都是**程序化模拟**，
 `run_report["review_mode"]` 必须显式标注 "programmatic, NOT human review"；
 **绝不**把它的产物描述成"已人工审核通过"。
+
+Stage 13 增量（图像段，§7.4）：
+    在 `visual_assets` 段之后新增 `image` 段（实现全部在 `orchestration/image_stage.py`）：
+        每个 Shot → VisualComposer.compose() → 真实 generate_image →
+        落盘 generated_images/<GEN_ID>.<ext> → manifest.json + 图像记账 →
+        Review 三态 → approved 才把 ShotAsset(kind="image") 挂回 Shot →
+        Storyboard **新版本**（原文件绝不覆盖）。
+    三条护栏：**默认不出图**（`generate_images` 缺省 False）/ **预算硬上限**
+    （`min(max_images, MAX_REAL_IMAGE_REQUESTS)`，绝不发出第 N+1 次）/
+    **绝不伪造出图**（无 key、未配置、预算耗尽一律如实记 failed/rejected）。
+    同时把 `run_spec["style_spec"]` 纳入 `visual_assets` 段（STYLE 不是 Shot 能引用的
+    资产，必须显式提供；未提供时行为与 Stage 12 完全一致）。
 """
 from __future__ import annotations
 
@@ -52,6 +64,7 @@ from core.assets import AssetRegistry
 from core.io import read_json
 from core.models import Episode, Project, Scene
 from core.shot import Storyboard
+from core.visual_compose import VisualComposer
 from core.visual_registry import VisualAssetRegistry, VisualRegistryError
 from memory.store import MemoryStore
 from context.assembler import ContextAssembler
@@ -71,6 +84,7 @@ from agents.scene_generation import SceneGenerationAgent, SceneGenerationStep
 from agents.storyboard import StoryboardAgent, StoryboardStep
 from agents.visual_asset import VisualAssetAgent, VisualAssetStep
 
+from orchestration.image_stage import ImageStage
 from orchestration.preflight import preflight_check, format_gaps
 from orchestration.state import (
     OrchestrationError,
@@ -161,6 +175,12 @@ class ProjectOrchestrator:
     :param review_policy:  "auto_approve" | "scripted:<file>" | "human_stub"。
     :param max_attempts:   每段 run 的 Step 最大尝试次数（引擎语义）。
     :param project_id:     项目标识（缺省由 project.title 折成 slug）。
+
+    Stage 13 新增（全部可选，缺省行为与 Stage 12 **完全一致**）：
+    :param image_provider: 图像 Provider（缺省走环境开关默认档，缺省 mock → 0 API）。
+    :param image_log_dir:  图像账目录（缺省 `v2/logs/stage13_image/`；测试注入 tmp）。
+    :param image_fetch:    URL 形态图片引用的下载器（缺省 stdlib urllib；
+                           测试注入假下载器 → 0 网络）。
     """
 
     def __init__(
@@ -173,6 +193,9 @@ class ProjectOrchestrator:
         review_policy: str = REVIEW_POLICY_AUTO_APPROVE,
         max_attempts: int = 3,
         project_id: Optional[str] = None,
+        image_provider: Any = None,
+        image_log_dir: Optional[Path] = None,
+        image_fetch: Optional[Callable[[str], bytes]] = None,
     ):
         if not isinstance(project, Project):
             raise OrchestrationError(
@@ -203,6 +226,14 @@ class ProjectOrchestrator:
         self.state = OrchestrationState.load(
             self.project_id, self.state_path, artifacts_dir=self.artifacts_dir)
 
+        # ---- Stage 13：图像段依赖（全部可选，缺省行为与 Stage 12 一致） ----
+        self.image_provider = (image_provider if image_provider is not None
+                               else self._default_image_provider())
+        self.image_log_dir = Path(image_log_dir) if image_log_dir else None
+        self.image_fetch = image_fetch
+        #: 本次 run 的项目级风格规范（run_spec["style_spec"]；STYLE 资产由它建档）
+        self._style_spec: dict = {}
+
         # 观测位：最近一次 run 的报告（测试 / 报告引用）
         self.last_report: Optional[dict] = None
         self.last_report_path: Optional[Path] = None
@@ -215,6 +246,17 @@ class ProjectOrchestrator:
         """缺省 Provider：走 Router 默认档（缺省 mock → 0 API）。"""
         from llm.router import Router
         return Router(kind="text").get_provider("text")
+
+    @staticmethod
+    def _default_image_provider():
+        """缺省图像 Provider：走环境开关（缺省 mock → 0 API 0 成本）。
+
+        ★ 与文本档同一纪律：**不静默退回 mock**。若环境开关指向的厂商没有可用的
+        图像档（`default_model` 为空 / 无 key），工厂会明确报错，编排层原样透传
+        —— 宁可明确阻塞，也绝不伪造出图（铁律 11）。
+        """
+        from llm.providers.registry import get_default_provider
+        return get_default_provider("image")
 
     # ------------------------------------------------------------------
     # 主入口
@@ -231,6 +273,18 @@ class ProjectOrchestrator:
             max_attempts  覆盖构造参数
             resume        是否复用已有状态跳过已完成部分（默认 True）
 
+            ★ Stage 13（图像段，§6.1）：
+            generate_images  是否出图。**缺省 False** —— 安全默认：不出图就不花钱。
+            image_shot_refs  只出这些 Shot（"S1_B1_SH2" 形态）；空/缺省 = 全部 Shot。
+            image_size       图像尺寸，canonical 记法 "1024*1024"（透传 Provider；
+                             厂商差异走 Config 的 size_separator）。
+            max_images       本次 run 的图像硬上限（缺省 3）。实际上限取
+                             min(max_images, MAX_REAL_IMAGE_REQUESTS)（§7.3-2）。
+            style_spec       项目级风格规范（建 STYLE 视觉档案）。★ STYLE 不是 Shot
+                             能引用的资产，不显式提供 → 出图时 compose 会明确报错
+                             （不硬出图）；不提供时视觉资产计数与 Stage 12 一致。
+            style_name       风格资产名（缺省 "default"）。
+
         :return: run_report（dict；同时落盘 `orchestration/run_<run_id>.json`）。
         :raises OrchestrationError: 入参非法 / human_stub / 视觉资产遇到编辑态决策 /
                                     编排层不变量被破坏。
@@ -241,6 +295,9 @@ class ProjectOrchestrator:
         episode = int(spec.get("episode") or 1)
         resume = bool(spec.get("resume", True))
         run_id = str(spec.get("run_id") or new_run_id())
+        # ★ Stage 13：项目级风格规范（STYLE 资产建档用；确定性输入，不靠 LLM 编造）
+        style_spec = spec.get("style_spec")
+        self._style_spec = dict(style_spec) if isinstance(style_spec, dict) else {}
 
         # ★ human_stub：§7.4「停下等外部注入决策」—— 开工前即短路，
         #   保证不产生任何 artifact、也不做无谓重试（诚实：不伪造人工审核）。
@@ -266,6 +323,7 @@ class ProjectOrchestrator:
                 "casting": {},
                 "scenes": {str(sid): {} for sid in scene_ids},
                 "visual_assets": {"registered": [], "pending": []},
+                "image": {},
             },
             "completeness": {
                 "scenes_total": len(scene_ids), "scenes_done": 0,
@@ -297,10 +355,23 @@ class ProjectOrchestrator:
 
         # ---------------- ③ 视觉资产段（每实体一次 run） ----------------
         entities = self._collect_entities(sb for _, sb in storyboards)
+        # ★ Stage 13：项目级风格档案（可选）。
+        #   STYLE 不在 Shot.assets 的可引用词表里（ASSET_KINDS 无 style），无法从
+        #   Storyboard 自动收集；但 VisualComposer 出图时必须解析到唯一 approved
+        #   STYLE（core/visual_compose.py 三级解析）。因此由 run_spec 显式提供
+        #   style_spec 时，把 ("style", name) 并入同一段、走同一套建档/审核机制。
+        #   未提供 → 不建档，assets_referenced/approved 计数与 Stage 12 完全一致。
+        style_entity = self._style_entity(spec)
+        if style_entity is not None:
+            entities = list(entities) + [style_entity]
         report["completeness"]["assets_referenced"] = len(entities)
         self._stage_visual_assets(entities, episode, handler, max_attempts, report)
 
-        # ---------------- ④ 齐备判定 + 落盘 ----------------
+        # ---------------- ④ 图像段（★Stage 13 新增：每 Shot 一张图） ----------------
+        report["stages"]["image"] = self._stage_images(
+            storyboards, episode, spec, handler, report)
+
+        # ---------------- ⑤ 齐备判定 + 落盘 ----------------
         self._compute_completeness(scene_ids, entities, report)
         report["status"] = self._decide_status(report)
         return self._finish(report, run_id)
@@ -819,6 +890,9 @@ class ProjectOrchestrator:
             if self.assets is not None and self.assets.has_location(name):
                 positions = [p.id for p in self.assets.get_positions(name)]
             return {"name": name, "positions": positions}
+        if kind == "style":
+            # ★ Stage 13：项目级风格（来自 run_spec["style_spec"]，非编造）
+            return dict(self._style_spec) or {"name": name}
         return {"name": name}
 
     def _casting_entry_by_name(self, name: str, episode: int) -> Optional[dict]:
@@ -879,6 +953,53 @@ class ProjectOrchestrator:
                     if str(getattr(a, "kind", "")) == "prop":
                         _add("prop", str(getattr(a, "ref", "") or "").strip())
         return out
+
+    @staticmethod
+    def _style_entity(spec: dict) -> Optional[Tuple[str, str]]:
+        """从 run_spec 解析项目级风格实体（★Stage 13 新增）。
+
+        :returns: ("style", name) 或 None（未提供 style_spec → None）。
+
+        为什么必须显式提供：STYLE 不是 Shot 能引用的资产（`core.shot.ASSET_KINDS`
+        里没有 style），因此 `_collect_entities` 永远收不到它；但
+        `VisualComposer.compose()` 出图时必须解析到唯一 approved STYLE 档案，
+        否则明确报错（§7.4「绝不没档案也硬出图」）。未提供时**不建档**，
+        视觉资产计数与 Stage 12 逐值一致（不破 stage12 的精确断言）。
+        """
+        style_spec = spec.get("style_spec")
+        if not isinstance(style_spec, dict) or not style_spec:
+            return None
+        name = str(spec.get("style_name") or "default").strip() or "default"
+        return ("style", name)
+
+    # ------------------------------------------------------------------
+    # ④ 图像段（★Stage 13 新增）
+    # ------------------------------------------------------------------
+    def _stage_images(self, storyboards: Sequence[Tuple[int, Storyboard]], episode: int,
+                      spec: dict, handler: Callable, report: dict) -> dict:
+        """Storyboard → VisualComposer → 真实出图 → 落盘 → 挂回 Shot。
+
+        三重护栏与全部纪律见 `orchestration/image_stage.py` 模块文档：
+        默认不出图（generate_images 缺省 False）/ 预算硬上限 / 绝不伪造出图。
+        出图 prompt **一律**来自 `ComposedVisualInput.render_prompt()`，
+        绝不绕过 VisualComposer 自己拼（§7.4 关键纪律）。
+        """
+        stage = ImageStage(
+            project_id=self.project_id,
+            project_dir=self.project_dir,
+            artifacts_dir=self.artifacts_dir,
+            store=self.store,
+            provider=self.image_provider,
+            registry=self.visual_registry,
+            composer=VisualComposer(self.visual_registry),
+            review_handler=handler,
+            review_mode=str(report.get("review_mode", "") or ""),
+            log_dir=self.image_log_dir,
+            fetch=self.image_fetch,
+            episode=episode,
+            state=self.state,
+        )
+        return stage.run(storyboards, spec)
 
     # ------------------------------------------------------------------
     # 读盘 / 完成度 / 收尾

@@ -26,8 +26,8 @@ V0.2 Stage 10-B —— 程序化 API 请求计数器 + 预算硬上限（v2/llm/
        （tokens>0 不推断请求数，请求数不推断成本）。两套口径互不掺和。
     7. 线程安全：全部计数在 threading.Lock 内完成（check+count 原子，
        无 TOCTOU）。不是裸全局 += 。
-    8. 可复用：按 kind（text/vision/multimodal/embedding/...）分桶记账，
-       预算按 kind 配置（vision=3，其余默认不限）。不为未来重构 Provider，
+    8. 可复用：按 kind（text/vision/multimodal/embedding/image/...）分桶记账，
+       预算按 kind 配置（vision=3，image=3，其余默认不限）。不为未来重构 Provider，
        只提供最小可复用计数能力。
 """
 from __future__ import annotations
@@ -44,7 +44,18 @@ from llm.client import LLMError
 MAX_REAL_VISION_REQUESTS = 3
 """Stage 10-B 真实 Vision API 请求硬上限（含 retry，按实际 HTTP 请求次数计）。"""
 
-DEFAULT_REAL_BUDGETS: Dict[str, Optional[int]] = {"vision": MAX_REAL_VISION_REQUESTS}
+MAX_REAL_IMAGE_REQUESTS = 3
+"""Stage 13 真实图像生成 API 请求硬上限（含 retry，按实际 HTTP 请求次数计）。
+
+与 Stage 10 的 vision 上限同量级（§7.3-2）：**真实出图直接烧钱**，缺省只给 3 张。
+注意：这是"真实 HTTP 请求"这一层的护栏；"本次 run 最多出几张图"由 run_spec
+的 `max_images` 另行限制（见 orchestration/image_stage.py），两者是纵深防御。
+"""
+
+DEFAULT_REAL_BUDGETS: Dict[str, Optional[int]] = {
+    "vision": MAX_REAL_VISION_REQUESTS,
+    "image": MAX_REAL_IMAGE_REQUESTS,     # ★ Stage 13 新增：image 独立桶
+}
 """各模态真实请求默认预算；None = 不限（未来模态按需加，不重构）。"""
 
 
@@ -188,6 +199,19 @@ class APIRequestCounter:
                 self._budget_rejections += 1
                 raise APIBudgetExceededError(kind, int(budget))
 
+    def set_budget(self, kind: str, max_requests: Optional[int]) -> Optional[int]:
+        """覆盖某 kind 的真实请求预算（Stage 13 新增；纯追加，既有 kind 行为不变）。
+
+        用途：编排层把"本次 run 的硬上限"（run_spec.max_images）下推到真实 HTTP 层，
+        形成纵深防御——即使业务层漏判，传输层仍会拒绝第 N+1 次请求。
+        :returns: 该 kind 的旧预算（None = 之前不限）。
+        """
+        with self._lock:
+            old = self._real_budgets.get(kind)
+            self._real_budgets[kind] = (None if max_requests is None
+                                        else int(max_requests))
+            return old
+
     def audit_records(self) -> List[dict]:
         with self._lock:
             return [dict(r) for r in self._audit]
@@ -299,6 +323,7 @@ def reset_api_counter(**kw) -> APIRequestCounter:
 
 __all__ = [
     "MAX_REAL_VISION_REQUESTS",
+    "MAX_REAL_IMAGE_REQUESTS",
     "DEFAULT_REAL_BUDGETS",
     "APIBudgetExceededError",
     "APIRequestCounter",

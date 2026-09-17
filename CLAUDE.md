@@ -9,7 +9,7 @@ This file provides guidance to WorkBuddy AI when working with code in this repos
 - **`FilmAgent/`（V0.1）**：冻结基准，是一套已跑通的串行流水线（casting → scenes_plan → lines_generate → … → clean_script），依赖 DeepSeek（`LLMCaller.py` + `Prompt/`）。**任何情况下不得修改。**
 - **`v2/`（V0.2）**：全新重写的基础设施——可测试、可扩展、有人工审核的多智能体框架，按阶段推进，每阶段由独立的"开工指令"文件（位于 `D:\AI\FilmAgent\`）控制。
 
-**当前进度：阶段 8（Canonical Schema）、阶段 9（Provider Architecture）、阶段 10（Visual Asset Layer）、阶段 11（StoryboardAgent）、阶段 12（Project 生命周期编排层）均已完成并封存。**
+**当前进度：阶段 8（Canonical Schema）、阶段 9（Provider Architecture）、阶段 10（Visual Asset Layer）、阶段 11（StoryboardAgent）、阶段 12（Project 生命周期编排层）均已完成并封存；阶段 13（Image Generation 真实出图）代码/测试/报告已交付，待人工验收 + commit/tag。**
 阶段 8：Canonical Schema 落地——`Project → Scene → Beat → Shot → Asset`（`v2/core/shot.py`），
 V0.1 经 `v2/core/adapter.py` 双向无损转换，新增 4 个校验器，Agent 公共骨架抽到 `v2/agents/base.py`。
 阶段 9：Multi-Modal **Provider Architecture** —— 把"用哪个模型、怎么调用"从业务代码剥离进
@@ -37,6 +37,19 @@ Shot 落 Stage 8 受控词表内、只存名字级引用 + 本镜头视觉增量
 一个项目的一集（N 个场景）从 0 走到"分镜齐备 + 视觉资产齐备"。**零改禁改清单**：
 ★ `v2/workflow/` **0 diff + 0 新增**（上层编排未污染引擎）。阶段 12 测试 **125/125**
 （总控独立复跑 rc=0）+ 历史回归 **9 套**全绿 + 真实 API **0 次**（真实冒烟脚本未创建未执行）。
+阶段 13：**Image Generation（真实出图）** —— 第一次真的把画面生成出来。打开 `image` 模态
+（`registry.create_provider` 只开 image 分支；★video/audio 仍被拒绝）+ 真实文生图 Provider
+（`openai_compatible_image.py`：`POST {base_url}/images/generations`，b64_json / url 两路都处理，
+错误翻译/瞬时重试/`transport` 注入沿用既有模式）+ 确定性 Mock 图像 Provider
+（`mock_image.py`：纯 stdlib 最小合法 PNG，0 网络 0 成本）+ 图像预算桶
+（`MAX_REAL_IMAGE_REQUESTS=3`）+ 图像价格表（`config.IMAGE_PRICING`，**与 token 价物理分开**）
++ 编排层 image 段（`orchestration/image_stage.py`：compose → 出图 → 落盘 → manifest →
+记账 → Review 三态 → `ShotAsset(kind="image")` 挂回 → **Storyboard 新版本**）。
+**三重护栏**：①默认不出图（`generate_images` 缺省 `False`）②预算硬上限
+（`cap = min(max_images, MAX_REAL_IMAGE_REQUESTS)`，达到即拒、**绝不发出第 N+1 次**，retry 也计预算）
+③绝不伪造出图（无 key / 未配置 / 预算耗尽 → 如实记 failed/rejected，**绝不用占位图冒充**）。
+**零改禁改清单**：`v2/core/` 0 diff、`v2/workflow/` 0 diff、仓库根 `.gitignore` 0 diff、
+`FilmAgent/` 0 diff。★ 真实出图**未执行**（人工四项前置未齐 → 如实报告阻塞）。
 协作规范与会话管理体系已落地（COMPLETE）：A/B/C/D = 不同 **WorkBuddy 会话**
 （见下文「协作与会话管理（长期规则）」），项目状态与交接沉淀到 `v2/docs/PROJECT_STATUS.md`
 与 `v2/docs/HANDOFF.md`；总控工作手册见 `v2/docs/ORCHESTRATION.md`，路线图见 `v2/docs/ROADMAP.md`。
@@ -99,14 +112,25 @@ python v2/logs/stage9_provider/run_tests.py                         # 26/26（Pr
 python v2/logs/stage10_visual_asset/run_tests.py                    # 76/76（Visual Asset 五类七态/Registry/参考图 sha256/Composer/计数器/E2E + 内嵌回归），mock，0 次真实调用
 python v2/logs/stage11_storyboard/run_tests.py                     # 65/65（Storyboard 契约/词表兜底/名字回锚/id 重排/降级/Step 壳/版本化/Review/Retry/Composer 衔接/边界 + 内嵌历史回归 8 套），mock，0 次真实调用
 python v2/logs/stage12_lifecycle/run_tests.py                      # 125/125（编排层 preflight 5 规则/state 原子写+resume/pipeline 两段式多场景/视觉齐备/Review 三态/resume/Token 硬证据/完整性 + 内嵌历史回归 9 套），mock，0 次真实调用
+python v2/logs/stage13_image/run_tests.py                          # 126/126（图像段 T01~T19：Mock 确定性出图/★默认不出图/★预算硬上限/审核三态/sha256 一致性/缺档案不硬出图/图像记账/★二进制泄漏扫描/静态检查/禁改 0 diff/端到端+resume + 内嵌历史回归 10 套），mock，0 次真实调用
 python v2/logs/stage10_visual_asset/run_real_visual_extraction.py   # 真实 Vision 冒烟（qwen3.7-plus，计费，人工批准）
 python v2/logs/stage11_storyboard/run_real_storyboard.py            # 真实文本冒烟 T31~T35（≤2 次调用，计费，人工批准；已就位未执行）
+python v2/logs/stage13_image/run_real_image.py                      # ★真实出图冒烟（并入 Stage 12 遗留 run_real_lifecycle；默认只体检 0 真实调用；
+                                                                    #  需四项人工前置 + --approve；≤3 张图像 + ≤5 次文本；已就位未执行）
 ```
+
+> **★ stage13 套件是当前最重的套件**：T18 内嵌 10 套历史回归，而这些历史套件**自身也在内嵌**
+> （stage12→stage1..11→stage11→stage1..10→stage10→…），总执行次数呈指数级增长，
+> 一次全量复跑约需 **40~60 分钟**（实测 ~58 分钟）。若只想快速自检本阶段改动，
+> 可直接跑 stage10/stage11 这两套较轻的历史套件做抽样核对。
 
 > **跑测试务必加 `env -u PYTHONPATH`**（宿主经 `PYTHONPATH` 注入 `sitecustomize` shim 劫持
 > `shutil.rmtree`，会导致历史套件假失败；判据=独立复跑 rc=0。详见 `v2/docs/ORCHESTRATION.md` §5.1）。
 
-- **日常回归策略**：跑 stage12 套件即可（其内嵌子进程已覆盖 stage1/3/4/6/7/8/9/10/11）；也可单独逐套跑 stage4 + stage6 + stage7 + stage8 + stage9 + stage10 + stage11 + stage12 核对。
+- **日常回归策略**：跑 stage13 套件即可（其内嵌子进程已覆盖 stage1/3/4/6/7/8/9/10/11/12 十套；
+  ★耗时约 40~60 分钟）；也可单独逐套跑 stage4 + stage6 + stage7 + stage8 + stage9 + stage10 + stage11 + stage12 核对。
+  ★ stage13 套件在起始与历史回归前后会**自动复位**被回归重写的已跟踪产物
+  （按 `git status` 扫历史套件目录后精确 `git checkout --`），跑完工作区保持干净（技术债 T-6 已缓解）。
 - **真实 LLM 调用只走独立脚本**（stage2 完整套件、stage6 的 `run_real_casting.py`），日常回归 0 计费。
 - **静态检查**（阶段 5 方式，环境无 ruff/mypy）：`compileall` + 全模块 import 冒烟 + 用正则扫 v2/ 源码里的真实 key 与硬编码绝对路径。
 - V0.1 冻结的自动化断言（stage3/4/6/7 各套件的 V0.1 完整性测试）：`v0.1^{commit}` 固定 `344c0c6…`、`v0.2-stage7` tag 存在、`git diff -- FilmAgent/` 为空、`FilmAgent/` 无 dirty 行。
@@ -128,13 +152,13 @@ core → (llm | memory | context) → workflow → review → agents → orchest
 | 层 | 位置 | 职责 |
 |---|---|---|
 | core | `v2/core/` | `models.py`（Scene/Character/Line/…/CastingResult）、`shot.py`（阶段8 Canonical：Shot/Beat/Storyboard/ShotAsset/受控词表）、`adapter.py`（阶段8：V0.1↔Canonical 无损转换）、`validator.py`、`io.py`（JSON 读写 + V0.1 字段容错）、`assets.py`、`token_log.py`（JSONL，不记 key 不记 prompt 正文）、`visual.py` / `visual_registry.py` / `visual_compose.py`（阶段10：视觉身份+版本+参考图 / Registry / Composer） |
-| llm | `v2/llm/` | `client.py`（`LLMClient.chat` → `LLMResponse`；`LLMError` 错误家族带 `retryable`、重试、token log；transport 可注入）+ `providers/`（阶段 9：`Provider` 接口族 Text/Vision/Multimodal/Embedding + Mock 四件套 + `OpenAICompatibleTextProvider` + `BailianTextProvider` + `OpenAICompatibleVisionProvider`（阶段10）+ `registry.create_provider` 工厂）+ `router.py`（`get_route` → `ProviderRoute`、`get_provider` 产出实例）+ `request_counter.py`（阶段10：真实请求计数 + 预算硬上限） |
+| llm | `v2/llm/` | `client.py`（`LLMClient.chat` → `LLMResponse`；`LLMError` 错误家族带 `retryable`、重试、token log；transport 可注入）+ `providers/`（阶段 9：`Provider` 接口族 Text/Vision/Multimodal/Embedding + Mock 四件套 + `OpenAICompatibleTextProvider` + `BailianTextProvider` + `OpenAICompatibleVisionProvider`（阶段10）+ ★阶段13：`MockImageGenerationProvider` / `OpenAICompatibleImageProvider` / `ImageGenerationError` + `registry.create_provider` 工厂）+ `router.py`（`get_route` → `ProviderRoute`、`get_provider` 产出实例）+ `request_counter.py`（阶段10：真实请求计数 + 预算硬上限；★阶段13 新增 `image` 桶与 `set_budget`） |
 | memory | `v2/memory/store.py` | `MemoryStore(project_id)`；facts 三态 candidate/approved/rejected、characters、world、history |
 | context | `v2/context/assembler.py` | `ContextAssembler` 按 Step 声明的 `needs` 组装 `AssembledContext`（每条带来源信息） |
 | workflow | `v2/workflow/` | `Step`（run/validate）、`WorkflowEngine.run(project_id, workflow_id, inputs, max_attempts, resume_from)`、`ArtifactStore`（版本化落盘）、状态机 |
 | review | `v2/review/service.py` | submit / approve / approve_with_edit / reject；记录持久化到项目 `reviews/` |
 | agents | `v2/agents/` | 公共骨架 `base.py`（`LLMAgent`/`LLMStep`，阶段8抽取）+ `casting.py` / `scene_generation.py` / `visual_asset.py`（阶段10）/ `storyboard.py`（阶段11：`StoryboardAgent`/`StoryboardStep` + `normalize_storyboard`） |
-| orchestration | `v2/orchestration/` | 阶段12 编排层（★最顶层）：`preflight.py`（`preflight_check` 调度前置校验门，5 规则，返回缺口清单不抛异常）+ `state.py`（`OrchestrationState` 编排进度 + 自实现原子写 + `should_skip`）+ `pipeline.py`（`ProjectOrchestrator`：两段式多场景编排 + 集级 Casting + 视觉资产齐备 + 三种 review 策略 + resume + run_report） |
+| orchestration | `v2/orchestration/` | 阶段12 编排层（★最顶层）：`preflight.py`（`preflight_check` 调度前置校验门，5 规则，返回缺口清单不抛异常）+ `state.py`（`OrchestrationState` 编排进度 + 自实现原子写 + `should_skip`；★阶段13 纯追加 `record_image_stage`/`image_entry`）+ `pipeline.py`（`ProjectOrchestrator`：两段式多场景编排 + 集级 Casting + 视觉资产齐备 + 三种 review 策略 + resume + run_report；★阶段13 新增 image 段接线 `_stage_images` 与 `run_spec["style_spec"]`）+ ★阶段13 `image_stage.py`（`ImageStage`：compose→出图→落盘→manifest→记账→Review→`ShotAsset(kind="image")` 挂回→Storyboard 新版本；`resolve_image_bytes` / `shot_ref_of`） |
 
 ### 数据流闭环（阶段 6/7 验证成立）
 
@@ -170,6 +194,33 @@ warnings 统一放 `Storyboard.metadata["normalize_warnings"]`。
 否则 move 行漏检）；`run_report["review_mode"]` 必含 `"programmatic, NOT human review"`
 （**绝不**把 `auto_approve` 的产物描述成"已人工审核通过"）。
 
+阶段 13 图像特有约定（Stage 14+ 必须延续）：
+
+- **三重护栏**：① `run_spec["generate_images"]` 缺省 `False`（**不显式打开就一张都不生成**）；
+  ② 预算硬上限 `cap = min(run_spec["max_images"], MAX_REAL_IMAGE_REQUESTS=3)`，达到即拒
+  （`APIBudgetExceededError`），**绝不发出第 N+1 次**；同一 cap 经
+  `APIRequestCounter.set_budget("image", cap)` 下推到真实 HTTP 层（纵深防御）；**retry 也计预算**；
+  ③ 无 key / 未配置模型 / 预算耗尽 → 如实记 `failed`/`rejected`，**绝不用占位图冒充真实出图**。
+- **出图 prompt 唯一来源**：`ComposedVisualInput.render_prompt()`（经 `VisualComposer.compose()`）；
+  **不得**绕过 Composer 自己拼 prompt，否则视觉一致性设计失效。
+- **★ STYLE 是硬前置**：`core.shot.ASSET_KINDS` 里没有 `style`，STYLE 无法从 Storyboard 自动收集，
+  必须由 `run_spec["style_spec"]` 显式提供（走同一套 VisualAssetAgent + Review + registry）；
+  不提供 → `compose()` 明确报错列缺口，**不硬出图**。
+- **引用串契约**：`ImageGenerationProvider.generate_image()` 的返回用 `ProviderResult.text`
+  携带引用串（`data:…base64` / `http(s)` / 本地路径）——接口签名 0 改，落盘归编排层（Artifact 铁律）。
+- **三本账分离**：token 账（`TokenLogger`）/ 请求计数（`APIRequestCounter` 分桶）/
+  图像账（`image_generation_calls.jsonl`，字段风格与 `TokenLogger` 对齐、**不含 token 概念**）。
+  **绝不**把图像成本塞进 token 账（计价单位不同）；未登记图像价 → `estimated_cost` 记 `null`。
+- **落盘纪律**：`GEN_%03d` 单调递增、**绝不复用 ID、绝不覆盖文件**；`sha256` 记进
+  `manifest.json`；挂回 Shot 走 **Artifact 新版本**（原 Storyboard 文件字节不变）；
+  `manifest` 必须记 `profile_versions` + `reference_images`（★Stage 14 VLM QA 的输入契约）。
+- **resume 保护成本**：manifest 中已 `generated` 的 `shot_ref` 重跑时**直接跳过**
+  （零 Provider 调用、零新产物），只把已有引用补挂回 Shot。
+- **图像审核遇 `approved_with_edit`** → 明确抛 `OrchestrationError`（图像是二进制，
+  无"编辑后内容"的确定性来源；fail-loud 优于静默猜）。
+- **★ 二进制泄漏防护**：生成的真实图片绝不进版本库；`v2/.gitignore` 已补 §8.4 规则
+  （仓库根 `.gitignore` **仍 0 改**）；交付前必做二进制扫描（stage13 套件 T15）。
+
 ### Agent 边界（`v2/AGENTS.md` 铁律）
 
 Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自己调 requests/openai、自己读磁盘 JSON、自己生成文件名/版本号、自己写 approved Memory、自己决定 Workflow 下一步。输入只来自 `AssembledContext`，LLM 只走 `LLMClient`，产出只交 `StepOutput(artifact_name=, data=)`。
@@ -197,32 +248,37 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
 ## 当前状态与下一步
 
 - 当前阶段：V0.2 Stage 8 / 9 / 10 / 11 / 12 均 **PASS + 已封存**；
-  V0.2 Stage 13 **NOT STARTED**（开工指令**已生成** —— `D:\AI\FilmAgent\v0.2开工指令13`）。
-  当前没有任何进行中的业务代码任务。
+  V0.2 Stage 13（Image Generation 真实出图）**代码 / 测试 / 报告已交付，待人工验收 + commit/tag**
+  （**未自动 commit、未自动 tag**）。★ 真实出图**未执行**（人工四项前置未齐 → 如实报告阻塞）。
 - 权威状态文档：`v2/docs/PROJECT_STATUS.md`；给新会话的交接文档：`v2/docs/HANDOFF.md`；
   总控工作手册：`v2/docs/ORCHESTRATION.md`；路线图：`v2/docs/ROADMAP.md`。
 - Git：版本锚点 `v0.1` = `344c0c6…`、`v0.2-stage7` = `300aae4…`、`v0.2-stage8` = `abf8e88…`、
   `v0.2-stage9` = `82a89b5…`、`v0.2-stage10` = `c8a3ed8…`、`v0.2-stage11` / `v0.2-stage12` =
   各自 tag 指向的 commit（`git rev-parse <tag>^{commit}` 查精确 hash，不写死）；
   **七个 tag** 均未移动；`FilmAgent/` 0 diff；仓库根 `.gitignore` 0 diff。最近 commit 见 `git log`。
+  ★ `v0.2-stage13` **尚未创建**（等人工批准）。
 - 已交付：阶段 0~12 全部完成并封存。阶段 12 = 编排层 `v2/orchestration/`
   （`preflight.py` / `state.py` / `pipeline.py` / `__init__.py`），把四个已封存 Agent 串成第一条
   端到端业务链（Casting → [每场景] Scene → Storyboard → 视觉资产齐备），
   测试 **125/125**（总控独立复跑）+ 历史回归 **9 套**全绿 + 真实 API 0 次；
   ★ `v2/workflow/` 0 diff + 0 新增。
-- 已知遗留：见 `v2/docs/PROJECT_STATUS.md` §6（openai 库安装；人工审核是程序化模拟，
-  交互式 UI 未做；Image/Video/VLM Agent 未实现；image/video/audio 仅 Schema +
-  Provider 预留接口，尚无真实生成；`structured=` 真实后端支持未验证；`bailian_vision`
-  `pricing=None` → est_cost 为 null，属配置护栏；Stage 12 真实冒烟脚本 `run_real_lifecycle.py`
-  **未创建未执行**（需 key + 人工批准，已如实登记为阻塞；★总控裁决：并入 Stage 13 真实冒烟
-  一并执行）；`T18b` 未做）。
-- 下一步：**新开一个 WorkBuddy 会话执行 Stage 13**（工作目录 `D:\AI\FilmAgent-main`；
-  **不要用 `claude` CLI** → 读 CLAUDE.md → `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md`
-  → `v2/docs/ORCHESTRATION.md` → 最近 Stage Report `v2/logs/stage12_lifecycle/stage12_report.md`
-  → Git 状态 → Stage 13 开工指令 → 相关代码）。
-  Stage 13 = **Image Generation（真实出图）**，在编排层之上加"出图 stage"：
-  打开 `image` 模态 + 真实文生图 Provider + 图像成本记账与**预算硬护栏** + 出图段
-  （`VisualComposer` 组装 → 真实生成 → 版本化落盘 → `ShotAsset(kind="image")` 挂回 Shot）。
-  **Stage 13 开工指令已生成**（`D:\AI\FilmAgent\v0.2开工指令13`）；**开工前须先封存 Stage 12**（指令 §3.0）。
-  ★ **VLM QA 已从 Stage 13 拆出，独立为 Stage 14**（2026-09-15 总控裁决）。
+  阶段 13 = 图像链路：`image` 模态开通（mock + 真实 OpenAI 兼容档，video/audio 仍拒绝）
+  + `v2/orchestration/image_stage.py`（compose→出图→落盘→manifest→记账→Review→挂回→新版本）
+  + 三重护栏（默认不出图 / 预算硬上限 / 绝不伪造出图）+ 图像独立记账；
+  ★ `v2/core/` 0 diff、`v2/workflow/` 0 diff、仓库根 `.gitignore` 0 diff。
+- 已知遗留：见 `v2/docs/PROJECT_STATUS.md` §6 与 `v2/docs/ROADMAP.md` §5（openai 库安装；
+  人工审核是程序化模拟，交互式 UI 未做；Video / Audio / VLM QA Agent 未实现；
+  `structured=` 真实后端支持未验证；`bailian_vision` `pricing=None` → est_cost 为 null，属配置护栏；
+  ★ Stage 13 新增：目标厂商是否支持 OpenAI `/images/generations` **未能从公开文档核实**（T-9）；
+  `config.IMAGE_PRICING` 空表 → 图像成本记 null（T-10）；单 run 出图上限固定
+  `min(max_images, 3)`（T-8）；`manifest.json` 因 `projects/` 整目录忽略而不入库（T-11，
+  真实冒烟脚本已把副本落到 `v2/logs/stage13_image/real_run/`）；Stage 12 遗留的
+  `run_real_lifecycle.py` **已并入** `v2/logs/stage13_image/run_real_image.py`（已就位未执行））。
+- 下一步：**人工验收 Stage 13 → commit + tag `v0.2-stage13` → 新开 WorkBuddy 会话执行 Stage 14**
+  （工作目录 `D:\AI\FilmAgent-main`；**不要用 `claude` CLI** → 读 CLAUDE.md →
+  `v2/docs/PROJECT_STATUS.md` → `v2/docs/HANDOFF.md` → `v2/docs/ORCHESTRATION.md` →
+  最近 Stage Report `v2/logs/stage13_image/stage13_report.md`（含契约笔记
+  `stage13_contract_notes.md`）→ Git 状态 → Stage 14 开工指令 → 相关代码）。
+  Stage 14 = **VLM QA**：生成图 vs 参考图 → 按 approved 档案字段**逐项裁决**；
+  Stage 13 已备好输入契约（manifest 的 `profile_versions` + `reference_images` 的 sha256）。
   路线图方向：第一集真实生成 → V0.2.0-alpha。
