@@ -5,21 +5,20 @@
 ## 1. 当前状态
 
 ```text
-当前状态：V0.2 Stage 13（Image Generation 真实出图）**代码/测试/报告已交付，
-          待人工验收 + commit/tag**（未自动 commit、未自动 tag）
-最近稳定版本：v0.2-stage12（`git rev-parse v0.2-stage12` 查精确 hash）
+当前状态：V0.2 Stage 13（Image Generation 真实出图）**已完成并封存** ✅
+最近稳定版本：v0.2-stage13（`git rev-parse v0.2-stage13` 查精确 hash）
 最近 commit：见 `git log --oneline -5`（不在此写死）
 下一阶段：Stage 14
 Stage 14：VLM QA（生成图 vs 参考图 → 按 approved 档案字段逐项裁决）
           ★ Stage 13 已备好输入契约：manifest 记录 profile_versions +
             reference_images 的 image_id + sha256（Stage 14 不需返工）
 Stage 13 交付要点：
-  - `image` 模态开通（mock + 真实 OpenAI 兼容档）；video/audio 仍被工厂拒绝
+  - `image` 模态开通（mock + 真实 OpenAI 兼容档 + 百炼 DashScope 原生档）；video/audio 仍被工厂拒绝
   - 编排层新增 image 段（v2/orchestration/image_stage.py）
   - 三重护栏：默认不出图 / 预算硬上限（min(max_images, 3)）/ 绝不伪造出图
   - 图像独立记账 image_generation_calls.jsonl（与 token 账分开，不造第二套账）
   - ★ 真实出图**未执行**（人工四项前置未齐 → 如实报告阻塞）
-开工方式：**新开一个 WorkBuddy 会话**（不要用 `claude` CLI，见 §4）
+开工方式：**新开一个独立 AI 编码会话**（总控 / 执行分离，见 §4）
 ```
 
 ## 2. Git 锚点
@@ -33,7 +32,7 @@ Stage 13 交付要点：
 | V0.2 Stage 10 Visual Asset Layer | `c8a3ed8282a767c3119ea29e012e7b8148d3ab3b` | `v0.2-stage10` |
 | V0.2 Stage 11 StoryboardAgent | `v0.2-stage11`（`git rev-parse v0.2-stage11` 查精确 hash） | `v0.2-stage11` |
 | V0.2 Stage 12 Project 生命周期编排 | `v0.2-stage12`（`git rev-parse v0.2-stage12` 查精确 hash） | `v0.2-stage12` |
-| V0.2 Stage 13 Image Generation | ★ 待人工批准后 commit；`git rev-parse v0.2-stage13` 查精确 hash | `v0.2-stage13`（**尚未创建**） |
+| V0.2 Stage 13 Image Generation | `v0.2-stage13`（`git rev-parse v0.2-stage13` 查精确 hash） | `v0.2-stage13` |
 
 约束：`FilmAgent/` 0 diff；`v0.1` / `v0.2-stage7` / `v0.2-stage8` / `v0.2-stage9` /
 `v0.2-stage10` / `v0.2-stage11` / `v0.2-stage12` **七个 tag** 永不移动；
@@ -82,12 +81,15 @@ M  v2/orchestration/state.py           （record_image_stage / image_entry，纯
 - **跨会话记忆靠文档**：CLAUDE.md / PROJECT_STATUS.md / HANDOFF.md / Stage Report /
   Git；聊天记录不作为项目长期记忆。
 
-## 4. 新 WorkBuddy 会话（Stage 14）如何开始
+## 4. 新会话（Stage 14）如何开始
 
-> **不要使用 `claude` CLI 或任何命令行 TUI 工具。** 本项目一律用 **WorkBuddy 会话**
-> 执行阶段（总控与执行分离见 `ORCHESTRATION.md` §1.1）。
+> **本项目的推进方式是「总控 / 执行会话分离」**（见 `ORCHESTRATION.md` §1.1）——
+> **不绑定任何特定工具**：任何能读写文件、执行命令的 AI 编码会话都能承担
+> A（分析）/ B（实现）/ C（测试）/ D（交付）角色。**关键是换会话、切断长上下文，
+> 而不是换工具。** 跨会话记忆一律靠本仓库的文档（`CLAUDE.md` / `v2/docs/` /
+> 各阶段 `开工指令` / `stage*_report.md` / Git tag），**不依赖聊天记录**。
 
-1. **在 WorkBuddy 中新开一个会话**（每个 A/B/C/D 各自一个，不吃旧会话的长上下文）。
+1. **新开一个会话**（每个 A/B/C/D 各自一个，不吃旧会话的长上下文）。
    工作目录指向 `D:\AI\FilmAgent-main`。
 
 2. 依次读取以下上下文：
@@ -116,10 +118,21 @@ M  v2/orchestration/state.py           （record_image_stage / image_entry，纯
 
 ## 5. 给下一个会话的关键提醒
 
-- **Stage 13 已交付（待人工验收）**：`image` 模态开通 + 真实文生图 Provider +
+- **Stage 13 已封存**：`image` 模态开通 + 真实文生图 Provider +
   图像预算护栏与独立记账 + 编排层 image 段。详见
   `v2/logs/stage13_image/stage13_report.md` 与 `stage13_contract_notes.md`。
   ★ **真实出图未执行**（人工四项前置未齐）；★ **VLM QA 是 Stage 14，不在 Stage 13 范围**。
+- **★ Stage 13-P 补丁（百炼原生档，2026-09-18）**：图像 Provider 现在**两档并存**，由 Config 的
+  `protocol` 字段选择 —— 缺省 `"openai"` → `OpenAICompatibleImageProvider`
+  （火山方舟 / OpenAI / 硅基流动 等 OpenAI Images 兼容端点）；`"dashscope_native"` →
+  `BailianImageProvider`（百炼 DashScope 原生，同步/异步）。
+  **换回来只改 Config，代码 0 行改动**。详见 `v2/logs/stage13_image/stage13p_native_provider.md`。
+  ★ **2026-09-28 URL 修复**：`base_url` 必须表示已含 `/api/v1` 的 API base，默认 path 只是
+  `/services/...` / `/tasks/...`；T20r–T20t 直接验证公共域同步、公共域异步提交+轮询、
+  业务空间域的最终 URL，每条只含一段 `/api/v1`。本地定向 20/20，全量 146/146、
+  rc=0、真实 API 0 次；修复待总控复核，`v0.2-stage13` 未移动。
+  ★ 铁律延续：**默认不出图 / 预算硬上限 / 绝不伪造出图**；模型名一律走 Config，
+  **连注释里也不许写具体型号**（套件 T16d 会扫）。
 - **Stage 13 的编排约定（Stage 14+ 必须延续）**：
   - **默认不出图**：`run_spec["generate_images"]` 缺省 `False` —— 不显式打开就一张都不生成。
   - **预算硬上限**：`cap = min(run_spec["max_images"], MAX_REAL_IMAGE_REQUESTS=3)`；

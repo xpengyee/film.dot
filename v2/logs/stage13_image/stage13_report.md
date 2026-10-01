@@ -338,7 +338,8 @@ stage12: [FAIL] T18-stage11 历史回归全绿 -> FAIL: T17 禁改文件 0 diff 
 | stage12 | T16 `禁改清单 0 diff` | `v2/llm`（整目录） | 同上 |
 
 **处置（不掩盖真回归）**：`_judge_history()` **只豁免**"仅因 Stage 13 实际改动路径而未过的
-禁改护栏"（路径从 `git status` 推导，非手写死清单），其余任何 FAIL 一律判失败；
+禁改护栏"（路径来自**声明式登记**的 `STAGE13_DELIVERABLE_PATHS`，**不从 `git status`
+推导** —— 那样会把"回归留下的脏文件"误判成本阶段合法改动），其余任何 FAIL 一律判失败；
 被豁免的 FAIL 逐条写入 `test_report.json.excused_history_fails` 供审计。
 
 **commit + tag 之后** HEAD 已含改动 → `diff vs HEAD` 为空 → 三套恢复 76/76、65/65、125/125
@@ -648,4 +649,29 @@ $ find v2/logs/stage13_image -name '*.png' -o -name '*.jpg'  → 0（测试图�
 
 ---
 
+---
+
+## 附：Stage 13-P 补丁（2026-09-18，总控追加）
+
+> 本节由**总控**在封存后追加，记录 `v0.2-stage13` 之后的增量补丁。
+> **tag 未移动**（`ORCHESTRATION.md` §5.2 铁律）。
+
+- **T-9 已核实并解决**：百炼**没有** OpenAI 兼容图像端点；其原生协议为 DashScope 形状
+  （千问系同步 / 万相系异步 `X-DashScope-Async` + `task_id` 轮询，返回 URL；
+  `size` 用 `宽*高`，与 canonical 记法**一致**）。
+  → 新增 `v2/llm/providers/bailian_image.py`（`protocol="dashscope_native"`），
+  与既有 OpenAI 兼容档**并存、可切换**（用户明确要求"只增不改、换回来不影响"）。
+- **预算语义定案**：`_invoke()` 包住整次业务尝试（含内部 N 次轮询）
+  ⇒ **一张图 = 1 次计费调用，轮询不额外消耗预算**（T20k 断言）。
+- **套件变更**：新增 **T20a~T20q（17 条）**；**修 T17c** —— 原实现把
+  `"v0.2-stage13" not in tags` 写死在**顶层**套件里，属 **pre-commit 瞬时断言**，
+  封存后**必然永久变红**（豁免机制只作用于嵌套历史套件，管不到它）→ 改为**状态感知**。
+  故本套件总数由 126 变为 **143**（§6.3 的 `126/126` 是 Stage 13 封存时的实测值，**保留不改**）。
+- **文档更正**：§6.4 原写豁免路径"从 `git status` 推导"与代码不符 ——
+  实际是**声明式登记** `STAGE13_DELIVERABLE_PATHS`（**不从 `git status` 推导**，避免循环论证），已更正。
+- 完整记录见 `v2/logs/stage13_image/stage13p_native_provider.md`。
+
+---
+
 *Stage 13 阶段报告 —— 由执行会话（A→D 全流程）产出；commit / tag 等人工批准。*
+*附节（Stage 13-P）由总控追加。*

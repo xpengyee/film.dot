@@ -3,7 +3,7 @@
 > 回答"后面要去哪、以及**为什么是这个顺序**"。总控据此判断下一阶段；
 > 执行会话不需要读本文件（读 `CLAUDE.md` + `HANDOFF.md` + 本阶段开工指令即可）。
 >
-> 最后更新：Stage 13 交付后（图像链路代码/测试/报告已就位，待人工验收；VLM QA 为独立 Stage 14）。
+> 最后更新：Stage 13 封存后（含 Stage 13-P「百炼原生档」补丁；VLM QA 为独立 Stage 14）。
 
 ---
 
@@ -97,16 +97,16 @@ Stage 16 Audio / TTS               →  Stage 17 Assembly → V0.2.0-alpha
 ## 4. 当前格位
 
 ```text
-当前：Stage 13（Image Generation 真实出图）**代码/测试/报告已交付，待人工验收 + commit/tag**
+当前：Stage 13（Image Generation 真实出图）**已完成并封存**（`v0.2-stage13`）
       —— `image` 模态已开通（mock + 真实 OpenAI 兼容档）；编排层新增 image 段；
       三重护栏（默认不出图 / 预算硬上限 / 绝不伪造出图）与图像独立记账就位。
       ★ 真实出图**未执行**（人工四项前置未齐 → 如实报告阻塞，不用占位图冒充）。
 下一阶段：Stage 14 —— VLM QA（生成图 vs 参考图 → 按 approved 档案字段逐项裁决）
           Stage 13 已备好输入契约：manifest 记录 profile_versions + reference_images(sha256)
-阻塞：无技术阻塞。
+阻塞：无已知架构阻塞；Stage 13-P 的 URL 双 `/api/v1` 拼接缺陷已修复并通过总控静态验收。
       Stage 13 遗留（不影响交付，详见 stage13_report.md §遗留）：
-        ① 目标厂商（百炼兼容模式）是否完整支持 OpenAI `/images/generations` **未能从公开文档核实**
-           → 首次真实调用前需人工确认；若协议差异过大，注入厂商 transport 即可（不动架构）。
+        ① 百炼图像协议已核实为 DashScope 原生档，与 OpenAI Images 兼容档并存；
+           2026-09-28 已修复 base/path URL 语义，最终 URL 测试覆盖公共域与业务空间域。
         ② `config.IMAGE_PRICING` 为空表 → 真实出图的 estimated_cost 记 null（护栏，非缺陷）。
         ③ 单次 run 出图数被收紧为 min(max_images, MAX_REAL_IMAGE_REQUESTS=3)（见技术债 T-8）。
         ④ Stage 12 遗留的 `run_real_lifecycle.py` 已并入本阶段真实冒烟脚本
@@ -127,7 +127,7 @@ Stage 16 Audio / TTS               →  Stage 17 Assembly → V0.2.0-alpha
 | T-6 | `stage3/stage4/stage6/stage7_report.json`（及 `stage3/stage4_console.txt`）每次回归都会被重写（含随机 id）产生 Git dirty | 交付前需 `git checkout --` 复位**6 个文件**，易误提交 | 可让套件写固定/可复现 id，或把报告移出跟踪 | 已登记；★**Stage 13 已缓解**：stage13 套件在 `main()` 起始与 `run_history()` 前后**自动复位**这 6 个文件（`_reset_history_products()`），跑完工作区保持干净 |
 | T-7 | ★**图像是二进制大文件**：生成的真实图片一旦入库，仓库迅速膨胀且无法回退 | 单次误 `git add` 即污染版本库 | Stage 13 已补 `v2/.gitignore` 规则 + 交付前二进制扫描 | ★**Stage 13 已落地防护**：§8.4 六条规则 + 套件 T15（`git check-ignore` 命中 / `git status` 无图片 / `v2/` 无二进制入库）；仓库根 `.gitignore` 仍 0 改 |
 | T-8 | 单次 run 出图数被收紧为 `min(run_spec["max_images"], MAX_REAL_IMAGE_REQUESTS=3)`：**`max_images` 只能调小、不能调大** | 需要一次出图 >3 张时无法通过 run_spec 提高（须改 `request_counter.py` 的常量） | 若业务确需更高上限，由总控评估后调整常量（并同步更新 stage13 套件 T06f 断言） | 已登记（属**安全默认**，非缺陷；run_report 同时记 `max_images_requested` 与 `budget_cap`，不误导） |
-| T-9 | ★**目标厂商协议未核实**：无法从公开文档确认百炼兼容模式完整支持 OpenAI `POST /images/generations`（返回 b64/url、是否异步轮询） | 首次真实出图可能因协议差异失败 | 首次真实调用前人工确认；若差异过大，**注入厂商 transport**（不动接口签名/架构） | 已登记（已写入 `run_real_image.py` 体检项与 `stage13_report.md` 遗留） |
+| T-9 | ★**目标厂商协议** —— ~~未能从公开文档核实~~ → **已核实并已解决（Stage 13-P）**：百炼**没有** OpenAI 兼容图像端点；其原生协议为 DashScope 形状（千问同步 / 万相异步 `X-DashScope-Async` + `task_id` 轮询，返回 URL） | ~~首次真实出图可能因协议差异失败~~ → **原生档已实现；2026-09-28 已修复重复 `/api/v1` URL 拼接** | — | ✅ **已解决并通过总控静态验收**：`base_url` 含 `/api/v1`，path 使用 `/services/...` / `/tasks/...`；T20r–T20t 断言两种域名的最终 URL；与 OpenAI 兼容档**并存、可切换**。详见 `v2/logs/stage13_image/stage13p_native_provider.md` |
 | T-10 | `config.IMAGE_PRICING` 为空表 → 真实出图的 `estimated_cost` 恒为 `null` | 真实出图无成本记账数字 | 人工在 `config.IMAGE_PRICING` 登记所选模型的单价即可（无需改业务代码） | 已登记（属**护栏**，非缺陷：绝不用 token 价冒充图像价） |
 | T-11 | `manifest.json` 落在 `v2/projects/<pid>/generated_images/`，而 `v2/.gitignore` 的 `projects/` 整目录规则使其**不会入库**（与 §8.4「manifest 保留为结构化证据」的表述有张力） | 真实运行的 manifest 不作为仓库证据留存 | 真实冒烟脚本已把 manifest **副本（无二进制）** 落到 `v2/logs/stage13_image/real_run/manifest_copy.json` | 已登记（处置见 stage13_report.md §裁决点） |
 | T-12 | 图像审核遇 `approved_with_edit` 直接抛 `OrchestrationError`（图像是二进制，无"编辑后内容"的确定性来源） | 无法对生成图做"编辑后通过" | 图像编辑属未立项能力（§4.4）；如需，应先有"图像编辑 Provider" | 已登记（fail-loud 优于静默猜，与 Stage 12 视觉资产裁决 2 同源） |
@@ -167,6 +167,9 @@ StoryboardAgent                                                    ✅ **已实�
                                                                       （preflight / state / pipeline；★ v2/workflow/ 0 diff + 0 新增）
 图像段 ImageStage                                                   ✅ **已实现（Stage 13）**：v2/orchestration/image_stage.py
                                                                       （compose→出图→落盘→manifest→记账→Review→挂回→新版本）
+OpenAI 兼容图像 Provider（火山/OpenAI/硅基流动…）                    ✅ **已实现（Stage 13）**：openai_compatible_image.py
+百炼 DashScope **原生**图像 Provider（同步/异步）                    ✅ **已实现（Stage 13-P 补丁）**：bailian_image.py
+                                                                      （`protocol="dashscope_native"`；与兼容档并存、可切换）
 ```
 
 ---

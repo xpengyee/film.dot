@@ -9,7 +9,7 @@ This file provides guidance to WorkBuddy AI when working with code in this repos
 - **`FilmAgent/`（V0.1）**：冻结基准，是一套已跑通的串行流水线（casting → scenes_plan → lines_generate → … → clean_script），依赖 DeepSeek（`LLMCaller.py` + `Prompt/`）。**任何情况下不得修改。**
 - **`v2/`（V0.2）**：全新重写的基础设施——可测试、可扩展、有人工审核的多智能体框架，按阶段推进，每阶段由独立的"开工指令"文件（位于 `D:\AI\FilmAgent\`）控制。
 
-**当前进度：阶段 8（Canonical Schema）、阶段 9（Provider Architecture）、阶段 10（Visual Asset Layer）、阶段 11（StoryboardAgent）、阶段 12（Project 生命周期编排层）均已完成并封存；阶段 13（Image Generation 真实出图）代码/测试/报告已交付，待人工验收 + commit/tag。**
+**当前进度：阶段 8 ～ 13（Canonical Schema / Provider Architecture / Visual Asset Layer / StoryboardAgent / Project 生命周期编排层 / Image Generation）均已完成并封存。**
 阶段 8：Canonical Schema 落地——`Project → Scene → Beat → Shot → Asset`（`v2/core/shot.py`），
 V0.1 经 `v2/core/adapter.py` 双向无损转换，新增 4 个校验器，Agent 公共骨架抽到 `v2/agents/base.py`。
 阶段 9：Multi-Modal **Provider Architecture** —— 把"用哪个模型、怎么调用"从业务代码剥离进
@@ -50,7 +50,15 @@ Shot 落 Stage 8 受控词表内、只存名字级引用 + 本镜头视觉增量
 ③绝不伪造出图（无 key / 未配置 / 预算耗尽 → 如实记 failed/rejected，**绝不用占位图冒充**）。
 **零改禁改清单**：`v2/core/` 0 diff、`v2/workflow/` 0 diff、仓库根 `.gitignore` 0 diff、
 `FilmAgent/` 0 diff。★ 真实出图**未执行**（人工四项前置未齐 → 如实报告阻塞）。
-协作规范与会话管理体系已落地（COMPLETE）：A/B/C/D = 不同 **WorkBuddy 会话**
+阶段 13-P（补丁，2026-09-18）：**百炼 DashScope 原生档** —— 新增 `bailian_image.py`
+（千问同步 + 万相异步 `X-DashScope-Async` + `task_id` 轮询；纯 stdlib 无新依赖；`transport` 可注入；
+★多图明确报错、绝不静默丢图；usage 回传）。图像 Provider 现为**两档并存**，由 Config 的
+`protocol` 字段分派（`registry._create_image_provider`）：缺省 `"openai"` →
+`OpenAICompatibleImageProvider`（火山方舟 / OpenAI / 硅基流动 等）；`"dashscope_native"` →
+`BailianImageProvider`（百炼原生）。**换回来只改 Config，代码 0 行改动**。
+★ 预算语义：`_invoke()` 包住整次业务尝试（含内部 N 次轮询）⇒ **一张图 = 1 次计费调用**。
+详见 `v2/logs/stage13_image/stage13p_native_provider.md`。
+协作规范与会话管理体系已落地（COMPLETE）：A/B/C/D = 不同 **AI 编码会话**（不绑定特定工具）
 （见下文「协作与会话管理（长期规则）」），项目状态与交接沉淀到 `v2/docs/PROJECT_STATUS.md`
 与 `v2/docs/HANDOFF.md`；总控工作手册见 `v2/docs/ORCHESTRATION.md`，路线图见 `v2/docs/ROADMAP.md`。
 
@@ -112,7 +120,7 @@ python v2/logs/stage9_provider/run_tests.py                         # 26/26（Pr
 python v2/logs/stage10_visual_asset/run_tests.py                    # 76/76（Visual Asset 五类七态/Registry/参考图 sha256/Composer/计数器/E2E + 内嵌回归），mock，0 次真实调用
 python v2/logs/stage11_storyboard/run_tests.py                     # 65/65（Storyboard 契约/词表兜底/名字回锚/id 重排/降级/Step 壳/版本化/Review/Retry/Composer 衔接/边界 + 内嵌历史回归 8 套），mock，0 次真实调用
 python v2/logs/stage12_lifecycle/run_tests.py                      # 125/125（编排层 preflight 5 规则/state 原子写+resume/pipeline 两段式多场景/视觉齐备/Review 三态/resume/Token 硬证据/完整性 + 内嵌历史回归 9 套），mock，0 次真实调用
-python v2/logs/stage13_image/run_tests.py                          # 126/126（图像段 T01~T19：Mock 确定性出图/★默认不出图/★预算硬上限/审核三态/sha256 一致性/缺档案不硬出图/图像记账/★二进制泄漏扫描/静态检查/禁改 0 diff/端到端+resume + 内嵌历史回归 10 套），mock，0 次真实调用
+python v2/logs/stage13_image/run_tests.py                          # 143/143（T01~T19 + Stage 13-P 的 T20a~T20q：Mock 确定性出图/★默认不出图/★预算硬上限/审核三态/sha256 一致性/缺档案不硬出图/图像记账/★二进制泄漏扫描/静态检查/禁改 0 diff/端到端+resume/★百炼原生档（同步·异步轮询·预算语义·两档分派） + 内嵌历史回归 10 套），mock，0 次真实调用
 python v2/logs/stage10_visual_asset/run_real_visual_extraction.py   # 真实 Vision 冒烟（qwen3.7-plus，计费，人工批准）
 python v2/logs/stage11_storyboard/run_real_storyboard.py            # 真实文本冒烟 T31~T35（≤2 次调用，计费，人工批准；已就位未执行）
 python v2/logs/stage13_image/run_real_image.py                      # ★真实出图冒烟（并入 Stage 12 遗留 run_real_lifecycle；默认只体检 0 真实调用；
@@ -248,15 +256,15 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
 ## 当前状态与下一步
 
 - 当前阶段：V0.2 Stage 8 / 9 / 10 / 11 / 12 均 **PASS + 已封存**；
-  V0.2 Stage 13（Image Generation 真实出图）**代码 / 测试 / 报告已交付，待人工验收 + commit/tag**
-  （**未自动 commit、未自动 tag**）。★ 真实出图**未执行**（人工四项前置未齐 → 如实报告阻塞）。
+  V0.2 Stage 13（Image Generation 真实出图）**已完成并封存**（`v0.2-stage13`）。
+  ★ 真实出图**未执行**（人工四项前置未齐 → 如实报告阻塞）。
 - 权威状态文档：`v2/docs/PROJECT_STATUS.md`；给新会话的交接文档：`v2/docs/HANDOFF.md`；
   总控工作手册：`v2/docs/ORCHESTRATION.md`；路线图：`v2/docs/ROADMAP.md`。
 - Git：版本锚点 `v0.1` = `344c0c6…`、`v0.2-stage7` = `300aae4…`、`v0.2-stage8` = `abf8e88…`、
   `v0.2-stage9` = `82a89b5…`、`v0.2-stage10` = `c8a3ed8…`、`v0.2-stage11` / `v0.2-stage12` =
   各自 tag 指向的 commit（`git rev-parse <tag>^{commit}` 查精确 hash，不写死）；
   **七个 tag** 均未移动；`FilmAgent/` 0 diff；仓库根 `.gitignore` 0 diff。最近 commit 见 `git log`。
-  ★ `v0.2-stage13` **尚未创建**（等人工批准）。
+  ★ `v0.2-stage13` = `git rev-parse v0.2-stage13`（tag 名查 hash，不写死）。
 - 已交付：阶段 0~12 全部完成并封存。阶段 12 = 编排层 `v2/orchestration/`
   （`preflight.py` / `state.py` / `pipeline.py` / `__init__.py`），把四个已封存 Agent 串成第一条
   端到端业务链（Casting → [每场景] Scene → Storyboard → 视觉资产齐备），

@@ -213,7 +213,9 @@ stage9 对预留基类 `ImageGenerationProvider().generate_image()` 抛 `NotImpl
 HEAD 已含改动 → 自然归零，三套恢复 76/76、65/65、125/125。
 
 执行侧的落地方式（不掩盖真回归）：`run_tests.py` 的 `_judge_history()` **只豁免**
-"仅因 Stage 13 实际改动路径而未过的禁改护栏"（路径从 `git status` 推导，非手写死清单），
+"仅因 Stage 13 合法改动路径而未过的禁改护栏"（路径来自**声明式登记**的
+`STAGE13_DELIVERABLE_PATHS`，**不从 `git status` 推导** —— 那样会把"回归留下的脏文件"
+误判成本阶段合法改动），
 其余任何 FAIL 一律判失败；被豁免的 FAIL 逐条写入 `test_report.json.excused_history_fails` 供审计。
 
 ### 3.3 冲突 3：STYLE 视觉档案缺口 → 裁决：**扩展 visual_assets 段支持 style**
