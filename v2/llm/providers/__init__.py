@@ -38,6 +38,7 @@ from llm.providers.openai_compatible_image import (
     OpenAICompatibleImageProvider,
     ImageGenerationError,
 )
+from llm.providers.bailian_image import BailianImageProvider
 from llm.providers.bailian import BailianTextProvider
 from llm.providers.registry import (
     create_provider,
@@ -66,6 +67,7 @@ __all__ = [
     "OpenAICompatibleMultimodalProvider",
     "MockImageGenerationProvider",
     "OpenAICompatibleImageProvider",
+    "BailianImageProvider",
     "ImageGenerationError",
     "encode_png",
     "png_data_url",

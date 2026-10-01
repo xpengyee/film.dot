@@ -45,6 +45,7 @@ from llm.providers.mock import (
     MockMultimodalProvider,
     MockEmbeddingProvider,
 )
+from llm.providers.bailian_image import BailianImageProvider
 from llm.providers.mock_image import MockImageGenerationProvider
 from llm.providers.openai_compatible import OpenAICompatibleTextProvider
 from llm.providers.bailian import BailianTextProvider
@@ -184,6 +185,29 @@ def _create_image_provider(vendor: Optional[str], *, cfg: Optional[dict]) -> Pro
         raise ValueError(
             f"vendor={vendor!r} 的 API key 未配置（环境变量 "
             f"{conf.get('api_key_env', '')}）。真实出图需要先配置密钥。")
+    # ★ Stage 13-P：按 Config 的 `protocol` 选实现。
+    #   缺省（不写该键）= "openai" → 与 Stage 13 行为**完全一致**（既有档零影响）。
+    #   "dashscope_native" → 百炼原生协议（同步/异步），见 bailian_image.py。
+    protocol = str(conf.get("protocol", "openai") or "openai").strip().lower()
+    if protocol in ("dashscope_native", "dashscope", "bailian_native"):
+        return BailianImageProvider(
+            api_key=api_key,
+            base_url=base_url,
+            model=model,
+            vendor=vendor,
+            size_separator=str(conf.get("size_separator", "*") or "*"),
+            async_mode=bool(conf.get("async", False)),
+            sync_path=conf.get("sync_path") or None,
+            create_path=conf.get("create_path") or None,
+            task_path=conf.get("task_path") or None,
+            poll_interval=float(conf.get("poll_interval", 3.0) or 3.0),
+            poll_timeout=float(conf.get("poll_timeout", 180.0) or 180.0),
+            extra_parameters=conf.get("extra_parameters") or None,
+        )
+    if protocol not in ("openai", "openai_compatible"):
+        raise ValueError(
+            f"config.PROVIDERS['{vendor}_image']['protocol']={protocol!r} 未知："
+            f"支持 'openai'（缺省，OpenAI Images 兼容）或 'dashscope_native'（百炼原生）。")
     return OpenAICompatibleImageProvider(
         api_key=api_key,
         base_url=base_url,

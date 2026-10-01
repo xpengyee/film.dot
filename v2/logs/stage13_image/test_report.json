@@ -513,14 +513,114 @@
       "detail": "status=''"
     },
     {
-      "name": "T17c 既有 tag 未被移动/删除（v0.1 与 v0.2-stage7..12 都在）",
+      "name": "T17c 既有 tag 未被移动/删除（v0.1 与 v0.2-stage7..12 都在且为 HEAD 祖先；v0.2-stage13 缺席或亦为 HEAD 祖先）",
       "ok": true,
-      "detail": "tags=['v0.1', 'v0.2-stage10', 'v0.2-stage11', 'v0.2-stage12', 'v0.2-stage7', 'v0.2-stage8', 'v0.2-stage9']"
+      "detail": "missing=[] moved=[] stage13_ok=True tags=['v0.1', 'v0.2-stage10', 'v0.2-stage11', 'v0.2-stage12', 'v0.2-stage13', 'v0.2-stage7', 'v0.2-stage8', 'v0.2-stage9']"
     },
     {
       "name": "T17d V0.1 冻结：git diff -- FilmAgent/ 为空",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "T20a 同步：返回引用串 = 图片 URL",
+      "ok": true,
+      "detail": "https://example.invalid/a.png"
+    },
+    {
+      "name": "T20b ★size 记法 '*' 原样透传（DashScope 与 canonical 一致，不做 x 转换）",
+      "ok": true,
+      "detail": "1024*1024"
+    },
+    {
+      "name": "T20c usage 被带回（不是空 TokenUsage）",
+      "ok": true,
+      "detail": "total_tokens=731"
+    },
+    {
+      "name": "T20d 请求体形状照官方文档（model / input.messages[].content[].text / parameters）",
+      "ok": true,
+      "detail": "['input', 'model', 'parameters']"
+    },
+    {
+      "name": "T20e ★显式下发 watermark=False（避免交付物多出 AI 角标）",
+      "ok": true,
+      "detail": "{'n': 1, 'size': '1024*1024', 'watermark': False}"
+    },
+    {
+      "name": "T20f 官方响应路径 output.choices[0].message.content[0].image 解析正确",
+      "ok": true,
+      "detail": "https://x/1.png"
+    },
+    {
+      "name": "T20g ★多张图 → 明确报错（绝不静默丢图）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T20h 无可取载体 → ImageGenerationError",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T20i 异步：创建走 image-generation 端点 + X-DashScope-Async: enable",
+      "ok": true,
+      "detail": "('/services/aigc/image-generation/generation', True)"
+    },
+    {
+      "name": "T20j 异步：轮询至 SUCCEEDED 后取到 URL",
+      "ok": true,
+      "detail": "('https://x/final.png', 3)"
+    },
+    {
+      "name": "T20k ★预算语义：1 张图只消耗 1 次 image 预算（3 次轮询不额外计费）",
+      "ok": true,
+      "detail": "{'real': 2, 'mock': 0, 'logical': 2}"
+    },
+    {
+      "name": "T20l 轮询超时 → LLMTimeoutError（不无限轮询）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T20m protocol=dashscope_native → BailianImageProvider（async 开关透传）",
+      "ok": true,
+      "detail": "BailianImageProvider"
+    },
+    {
+      "name": "T20n ★缺省（无 protocol）→ OpenAICompatibleImageProvider（既有行为 0 变）",
+      "ok": true,
+      "detail": "OpenAICompatibleImageProvider"
+    },
+    {
+      "name": "T20o 未知 protocol → 明确报错",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "T20p ★既有 config 档 0 改：bailian_image 仍 compatible-mode + 空模型护栏 + 无 protocol 键",
+      "ok": true,
+      "detail": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    },
+    {
+      "name": "T20q ★两档并存：_image_vendors 同时含兼容档与原生档",
+      "ok": true,
+      "detail": "['ark', 'bailian', 'bailian_native', 'openai']"
+    },
+    {
+      "name": "T20r ★公共域同步最终 URL：从真实 Config 组合且只含一段 /api/v1",
+      "ok": true,
+      "detail": "[('POST', 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation')]"
+    },
+    {
+      "name": "T20s ★公共域异步最终 URL：提交与轮询均只含一段 /api/v1",
+      "ok": true,
+      "detail": "[('POST', 'https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation'), ('GET', 'https://dashscope.aliyuncs.com/api/v1/tasks/TASK-URL')]"
+    },
+    {
+      "name": "T20t ★业务空间域最终 URL：与公共域共用 base=/api/v1 语义",
+      "ok": true,
+      "detail": "[('POST', 'https://workspace-test.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation')]"
     },
     {
       "name": "T19a status=success（分镜 + 视觉资产 + 出图全链跑通）",
@@ -633,8 +733,8 @@
       "detail": "仅 pre-commit 禁改护栏未过（Stage 13 依 §8.2 合法修改 v2/llm + v2/config.py；commit 后归零）: [FAIL] T16 禁改清单 0 diff（§8.3 + FilmAgent/ + 仓库根 .gitignore）  ->  有改动: ['v2/llm'] | [FAIL] T18-stage10 历史回归全绿  ->  TOTAL: 75/76 passed;   FAIL: T15b config.py 预期 0 改（bailian_vision 槽位既有）  ->  ;  | [FAIL] T18-stage11 历史回归全绿  ->    FAIL: T17 禁改文件 0 diff（§8.3 硬清单 + FilmAgent/ + 仓库根 .gitignore）  ->  有改动: "
     }
   ],
-  "passed": 126,
-  "total": 126,
+  "passed": 146,
+  "total": 146,
   "excused_history_fails": [
     "stage10: [FAIL] T15b config.py 预期 0 改（bailian_vision 槽位既有）",
     "stage11: [FAIL] T17 禁改文件 0 diff（§8.3 硬清单 + FilmAgent/ + 仓库根 .gitignore）  ->  有改动: ['v2/llm']",

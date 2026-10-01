@@ -61,7 +61,7 @@ from core.models import Episode, Project, Scene, World                 # noqa: E
 from core.shot import Storyboard, Shot                                 # noqa: E402
 from core.visual_registry import VisualAssetRegistry                   # noqa: E402
 from core.visual_compose import VisualComposer, VisualComposeError     # noqa: E402
-from llm.client import LLMConnectionError, LLMRequestError             # noqa: E402
+from llm.client import LLMConnectionError, LLMRequestError, LLMTimeoutError  # noqa: E402
 from llm.providers.base import ImageGenerationProvider                 # noqa: E402
 from llm.providers.mock import MockTextProvider                        # noqa: E402
 from llm.providers.mock_image import (                                 # noqa: E402
@@ -1095,11 +1095,25 @@ def test_forbidden_paths_untouched():
     tags = subprocess.run(["git", "tag", "-l"], capture_output=True, text=True,
                           cwd=str(REPO_ROOT))
     have = set((tags.stdout or "").split())
-    check("T17c 既有 tag 未被移动/删除（v0.1 与 v0.2-stage7..12 都在）",
-          {"v0.1", "v0.2-stage7", "v0.2-stage8", "v0.2-stage9",
-           "v0.2-stage10", "v0.2-stage11", "v0.2-stage12"} <= have
-          and "v0.2-stage13" not in have,
-          f"tags={sorted(have)}")
+    # ★ Stage 13-P 修正：本断言原先把"v0.2-stage13 尚未创建"写死在顶层，属 **pre-commit
+    #   瞬时断言** —— 封存后必然永久变红（且豁免机制只作用于嵌套历史套件，管不到这里）。
+    #   改为**状态感知**：7 个既有 tag 必须存在且都是 HEAD 的祖先（捕获"删除/移到别处"）；
+    #   v0.2-stage13 缺席（封存前）或存在且为 HEAD 祖先（封存后）**都算通过**。
+    #   诚实边界：`--is-ancestor` 抓得住"删除"和"移到无关分支"，抓不住"向前移动到后代"。
+    def _is_ancestor(rev: str) -> bool:
+        r = subprocess.run(["git", "merge-base", "--is-ancestor", rev, "HEAD"],
+                           capture_output=True, text=True, cwd=str(REPO_ROOT))
+        return r.returncode == 0
+
+    required = ["v0.1", "v0.2-stage7", "v0.2-stage8", "v0.2-stage9",
+                "v0.2-stage10", "v0.2-stage11", "v0.2-stage12"]
+    missing = [t for t in required if t not in have]
+    moved = [t for t in required if t in have and not _is_ancestor(t)]
+    stage13_ok = ("v0.2-stage13" not in have) or _is_ancestor("v0.2-stage13")
+    check("T17c 既有 tag 未被移动/删除（v0.1 与 v0.2-stage7..12 都在且为 HEAD 祖先；"
+          "v0.2-stage13 缺席或亦为 HEAD 祖先）",
+          not missing and not moved and stage13_ok,
+          f"missing={missing} moved={moved} stage13_ok={stage13_ok} tags={sorted(have)}")
 
     df = subprocess.run(["git", "diff", "--stat", "HEAD", "--", "FilmAgent"],
                         capture_output=True, text=True, cwd=str(REPO_ROOT))
@@ -1205,6 +1219,200 @@ def test_end_to_end():
           and guess_extension(b"\xff\xd8\xff") == ".jpg"
           and isinstance(expect_raises(ImageGenerationError, resolve_image_bytes, ""),
                          ImageGenerationError))
+
+
+# ---------------------------------------------------------------------------
+# T20 Stage 13-P —— 百炼 DashScope 原生档（★纯新增，与 OpenAI 兼容档并存）
+# ---------------------------------------------------------------------------
+def test_bailian_native_provider():
+    """T20：原生协议形状 / 响应解析 / 异步轮询 / 预算语义 / registry 分派（0 网络）。
+
+    ★ T20k 是本组最重要的一条：异步轮询发生在 transport **内部**，而 `_invoke()`
+      每次业务尝试只计 1 次预算 ⇒ **一张图 = 1 次计费调用，轮询不额外消耗预算**。
+    """
+    from core.token_log import TokenUsage
+    from llm.providers.bailian_image import (
+        BailianImageProvider, _extract_reference,
+        DEFAULT_CREATE_PATH, DEFAULT_SYNC_PATH, DEFAULT_TASK_PATH,
+    )
+    from llm.providers.registry import _image_vendors
+
+    c = APIRequestCounter(real_budgets={"image": 50})   # 独立计数器，不扰共享单例
+
+    # ---- 同步路径：请求体形状 + size 记法 + usage ----
+    cap = {}
+    def fake_sync(prompt, model, size, reference, timeout):
+        cap.update(prompt=prompt, model=model, size=size)
+        return "https://example.invalid/a.png", TokenUsage(
+            input_tokens=720, output_tokens=11, total_tokens=731)
+
+    p = BailianImageProvider(api_key="k", base_url="https://example.invalid/api/v1",
+                             model="M", transport=fake_sync, counter=c)
+    r = p.generate_image("一只猫", size="1024*1024")
+    check("T20a 同步：返回引用串 = 图片 URL",
+          r.text == "https://example.invalid/a.png", r.text[:60])
+    check("T20b ★size 记法 '*' 原样透传（DashScope 与 canonical 一致，不做 x 转换）",
+          cap["size"] == "1024*1024", cap["size"])
+    check("T20c usage 被带回（不是空 TokenUsage）", r.usage.total_tokens == 731,
+          f"total_tokens={r.usage.total_tokens}")
+
+    body = p.build_body("一只猫", "1024*1024")
+    check("T20d 请求体形状照官方文档（model / input.messages[].content[].text / parameters）",
+          body["model"] == "M"
+          and body["input"]["messages"][0]["content"][0]["text"] == "一只猫"
+          and body["parameters"]["n"] == 1, sorted(body.keys()))
+    check("T20e ★显式下发 watermark=False（避免交付物多出 AI 角标）",
+          body["parameters"].get("watermark") is False, body["parameters"])
+
+    # ---- 响应解析（官方主路径 + 多图 fail-loud + 无载体报错）----
+    doc = {"status_code": 200, "output": {"task_status": "SUCCEEDED", "choices": [
+        {"message": {"content": [{"image": "https://x/1.png", "type": "image"}]}}]},
+        "usage": {"input_tokens": 720, "output_tokens": 11, "total_tokens": 731}}
+    url, usage = _extract_reference(doc)
+    check("T20f 官方响应路径 output.choices[0].message.content[0].image 解析正确",
+          url == "https://x/1.png" and usage.total_tokens == 731, url)
+    multi = {"output": {"choices": [{"message": {"content": [
+        {"image": "https://x/1.png"}, {"image": "https://x/2.png"}]}}]}}
+    check("T20g ★多张图 → 明确报错（绝不静默丢图）",
+          isinstance(expect_raises(ImageGenerationError, _extract_reference, multi),
+                     ImageGenerationError))
+    check("T20h 无可取载体 → ImageGenerationError",
+          isinstance(expect_raises(ImageGenerationError, _extract_reference, {"output": {}}),
+                     ImageGenerationError))
+
+    # ---- 异步路径：创建 → 轮询 → 终态 ----
+    pa = BailianImageProvider(api_key="k", base_url="https://example.invalid/api/v1",
+                              model="M", counter=c, async_mode=True,
+                              poll_interval=0, poll_timeout=5)
+    seen = {"post": None, "get": 0}
+    def fake_post(path, body_, timeout, *, async_submit):
+        seen["post"] = (path, async_submit)
+        return {"output": {"task_id": "T1", "task_status": "PENDING"}}
+    def fake_get(url_, timeout):
+        seen["get"] += 1
+        if seen["get"] < 3:
+            return {"output": {"task_id": "T1", "task_status": "RUNNING"}}
+        return {"output": {"task_id": "T1", "task_status": "SUCCEEDED", "choices": [
+            {"message": {"content": [{"image": "https://x/final.png"}]}}]}}
+    pa._post_json = fake_post
+    pa._get_json = fake_get
+    res = pa.generate_image("一间花店")
+    check("T20i 异步：创建走 image-generation 端点 + X-DashScope-Async: enable",
+          seen["post"] == (DEFAULT_CREATE_PATH, True), seen["post"])
+    check("T20j 异步：轮询至 SUCCEEDED 后取到 URL",
+          res.text == "https://x/final.png" and seen["get"] == 3, (res.text, seen["get"]))
+    check("T20k ★预算语义：1 张图只消耗 1 次 image 预算（3 次轮询不额外计费）",
+          c.snapshot()["by_kind"].get("image", {}).get("real") == 2,
+          c.snapshot()["by_kind"].get("image"))
+
+    pt = BailianImageProvider(api_key="k", base_url="https://example.invalid/api/v1",
+                              model="M", counter=c, async_mode=True,
+                              poll_interval=0, poll_timeout=0)
+    pt._post_json = fake_post
+    pt._get_json = lambda url_, timeout: {"output": {"task_status": "RUNNING"}}
+    check("T20l 轮询超时 → LLMTimeoutError（不无限轮询）",
+          type(expect_raises(LLMTimeoutError, pt.generate_image, "x")).__name__
+          == "LLMTimeoutError" or "LLMTimeoutError" in str(
+              expect_raises(LLMTimeoutError, pt.generate_image, "x")))
+
+    # ---- registry 分派（★既有档行为 0 变）----
+    saved_key = os.environ.get("BAILIAN_API_KEY")
+    os.environ["BAILIAN_API_KEY"] = "test-key-not-real"
+    try:
+        p_native = create_provider(
+            "image", "bailian_native",
+            cfg={"default_model": "M", "base_url": "https://example.invalid/api/v1",
+                 "api_key_env": "BAILIAN_API_KEY",
+                 "protocol": "dashscope_native", "async": True})
+        check("T20m protocol=dashscope_native → BailianImageProvider（async 开关透传）",
+              isinstance(p_native, BailianImageProvider) and p_native.async_mode is True,
+              type(p_native).__name__)
+        p_compat = create_provider(
+            "image", "bailian_native",
+            cfg={"default_model": "M", "base_url": "https://example.invalid/api/v1"})
+        check("T20n ★缺省（无 protocol）→ OpenAICompatibleImageProvider（既有行为 0 变）",
+              isinstance(p_compat, OpenAICompatibleImageProvider), type(p_compat).__name__)
+        check("T20o 未知 protocol → 明确报错",
+              isinstance(expect_raises(
+                  ValueError, create_provider, "image", "bailian_native",
+                  cfg={"default_model": "M", "base_url": "https://x",
+                       "protocol": "火星协议"}), ValueError))
+    finally:
+        if saved_key is None:
+            os.environ.pop("BAILIAN_API_KEY", None)
+        else:
+            os.environ["BAILIAN_API_KEY"] = saved_key
+
+    check("T20p ★既有 config 档 0 改：bailian_image 仍 compatible-mode + 空模型护栏 + 无 protocol 键",
+          PROVIDERS["bailian_image"]["base_url"].endswith("/compatible-mode/v1")
+          and PROVIDERS["bailian_image"]["default_model"] == ""
+          and "protocol" not in PROVIDERS["bailian_image"],
+          PROVIDERS["bailian_image"]["base_url"])
+    check("T20q ★两档并存：_image_vendors 同时含兼容档与原生档",
+          {"bailian", "bailian_native", "ark", "openai"} <= _image_vendors(),
+          sorted(_image_vendors()))
+
+    # ---- 最终 HTTP URL（★ Stage 13-P 修复：从真实 Config 档读 base_url）----
+    # 截获 `_request` 是为了在不发网络的前提下检查 `_post_json` / `_poll_task`
+    # 已完成的 URL 组合；不再只断言传入 `_post_json` 的 path。
+    native_cfg = dict(PROVIDERS["bailian_native_image"])
+    public_base = native_cfg["base_url"]
+    sync_calls = []
+    p_url_sync = BailianImageProvider(
+        api_key="k", base_url=public_base, model="M", counter=c, max_retries=0)
+
+    def fake_sync_request(method, url_, data, headers, timeout):
+        sync_calls.append((method, url_))
+        return {"output": {"choices": [{"message": {"content": [
+            {"image": "https://x/sync.png"}]}}]}}
+
+    p_url_sync._request = fake_sync_request
+    p_url_sync.generate_image("公共域同步 URL")
+    expected_sync_url = public_base + DEFAULT_SYNC_PATH
+    check("T20r ★公共域同步最终 URL：从真实 Config 组合且只含一段 /api/v1",
+          sync_calls == [("POST", expected_sync_url)]
+          and expected_sync_url.count("/api/v1") == 1,
+          sync_calls)
+
+    async_calls = []
+    p_url_async = BailianImageProvider(
+        api_key="k", base_url=public_base, model="M", counter=c,
+        async_mode=True, max_retries=0, poll_interval=0, poll_timeout=5)
+
+    def fake_async_request(method, url_, data, headers, timeout):
+        async_calls.append((method, url_))
+        if method == "POST":
+            return {"output": {"task_id": "TASK-URL", "task_status": "PENDING"}}
+        return {"output": {"task_id": "TASK-URL", "task_status": "SUCCEEDED",
+                           "choices": [{"message": {"content": [
+                               {"image": "https://x/async.png"}]}}]}}
+
+    p_url_async._request = fake_async_request
+    p_url_async.generate_image("公共域异步 URL")
+    expected_create_url = public_base + DEFAULT_CREATE_PATH
+    expected_task_url = public_base + DEFAULT_TASK_PATH.format(task_id="TASK-URL")
+    check("T20s ★公共域异步最终 URL：提交与轮询均只含一段 /api/v1",
+          async_calls == [("POST", expected_create_url), ("GET", expected_task_url)]
+          and all(url_.count("/api/v1") == 1 for _, url_ in async_calls),
+          async_calls)
+
+    workspace_base = "https://workspace-test.cn-beijing.maas.aliyuncs.com/api/v1"
+    workspace_calls = []
+    p_url_workspace = BailianImageProvider(
+        api_key="k", base_url=workspace_base, model="M", counter=c, max_retries=0)
+
+    def fake_workspace_request(method, url_, data, headers, timeout):
+        workspace_calls.append((method, url_))
+        return {"output": {"choices": [{"message": {"content": [
+            {"image": "https://x/workspace.png"}]}}]}}
+
+    p_url_workspace._request = fake_workspace_request
+    p_url_workspace.generate_image("业务空间域同步 URL")
+    expected_workspace_url = workspace_base + DEFAULT_SYNC_PATH
+    check("T20t ★业务空间域最终 URL：与公共域共用 base=/api/v1 语义",
+          workspace_calls == [("POST", expected_workspace_url)]
+          and expected_workspace_url.count("/api/v1") == 1,
+          workspace_calls)
 
 
 # ---------------------------------------------------------------------------
@@ -1416,6 +1624,7 @@ def main():
         test_binary_leak_scan,
         test_static_checks,
         test_forbidden_paths_untouched,
+        test_bailian_native_provider,
         test_end_to_end,
     ]
     for t in tests:
@@ -1435,7 +1644,10 @@ def main():
     report = {
         "suite": "stage13_image",
         "real_api_requests": 0,
-        "results": _results,
+        # ★ detail 一律转成 str：报告必须**按构造**可 JSON 序列化
+        #   （Stage 13-P 踩过：把 TokenUsage 对象当 detail 传 → json.dumps 抛 TypeError，
+        #    导致套件在收尾写报告时崩掉、rc=1，而测试本身全绿 —— 极易误判）。
+        "results": [dict(r, detail=str(r.get("detail", ""))) for r in _results],
         "passed": passed, "total": total,
         # ★ 被豁免的历史套件 FAIL（pre-commit 禁改护栏；逐条留痕，供总控审计）
         "excused_history_fails": list(_excused_fails),

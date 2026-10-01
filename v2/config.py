@@ -179,6 +179,10 @@ PROVIDER_ENV_API_KEYS = {
     "deepseek": ENV_API_KEY_NAME,
     "bailian": "BAILIAN_API_KEY",
     "local": "",
+    # ★ Stage 13-P：新增图像 vendor（纯追加；既有 4 项 0 改）
+    "bailian_native": "BAILIAN_API_KEY",   # 百炼原生档（与 bailian 同一把 key）
+    "ark": "ARK_API_KEY",                  # 火山方舟
+    "openai": "OPENAI_API_KEY",            # OpenAI 官方
 }
 
 PROVIDERS: dict = {
@@ -228,6 +232,57 @@ PROVIDERS: dict = {
         "pricing": None,                  # 图像价格走 IMAGE_PRICING（与 token 价分开）
         "size_separator": "x",            # canonical "1024*1024" → 线上协议 "1024x1024"
         "default_size": "1024*1024",      # 缺省尺寸（实际由编排层 run_spec 显式传）
+    },
+
+    # ------------------------------------------------------------------
+    # ★ Stage 13-P：图像 Provider 档位（★纯新增，既有档位 0 改、行为 0 变）
+    #
+    #   `protocol` 字段决定用哪个实现（缺省 = "openai"）：
+    #       缺省 / "openai"      → OpenAICompatibleImageProvider（OpenAI Images 兼容）
+    #       "dashscope_native"   → BailianImageProvider（百炼 DashScope 原生，同步/异步）
+    #
+    #   ★ 两档**并存、互不影响**：想换回兼容档，只需让调用方指向另一个 vendor
+    #     （或改环境开关 FILMAGENT_PROVIDER），代码一行不用动。
+    # ------------------------------------------------------------------
+
+    # OpenAI Images 兼容档 —— 火山方舟（同步返回，url 或 b64_json 都支持）
+    "ark_image": {
+        "kind": "image", "vendor": "ark",
+        "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+        "default_model": "",              # 填具体图像模型名（人工填，绝不硬编码；型号见厂商文档）
+        "api_key_env": "ARK_API_KEY",
+        "pricing": None,
+        "size_separator": "x",            # 方舟：canonical "1024*1024" → 线上 "1024x1024"
+        "default_size": "1024*1024",
+    },
+
+    # OpenAI Images 兼容档 —— OpenAI 官方
+    "openai_image": {
+        "kind": "image", "vendor": "openai",
+        "base_url": "https://api.openai.com/v1",
+        "default_model": "",              # 填具体图像模型名（人工填，绝不硬编码）
+        "api_key_env": "OPENAI_API_KEY",
+        "pricing": None,
+        "size_separator": "x",
+        "default_size": "1024*1024",
+    },
+
+    # 百炼 DashScope **原生**档（同步/异步由 `async` 决定；形状见 bailian_image.py）
+    "bailian_native_image": {
+        "kind": "image", "vendor": "bailian_native",
+        "protocol": "dashscope_native",
+        # ★ 官方文档（2026-09）示例用**业务空间域**：
+        #     https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/api/v1
+        #   若账号要求空间域，请把下行覆盖为空间域；此处默认用长期稳定的公共域。
+        "base_url": "https://dashscope.aliyuncs.com/api/v1",
+        "default_model": "",              # 填具体图像模型名（人工填，绝不硬编码；型号见厂商文档）
+        "api_key_env": "BAILIAN_API_KEY",
+        "pricing": None,
+        "size_separator": "*",            # ★ DashScope 用 "宽*高"，与 canonical 记法一致
+        "default_size": "1024*1024",
+        "async": False,                   # true → 万相异步（X-DashScope-Async + task 轮询）
+        "poll_interval": 3.0,
+        "poll_timeout": 180.0,
     },
 }
 
