@@ -136,8 +136,16 @@ core → llm → workflow/review → agents → orchestration
    - 该版本必须是 `approved` 或其后被新版本取代的 `superseded`；
    - 禁止自动改用 `active_version()`，否则 QA 会拿新档案审旧图。
 5. 从这些精确版本收集 profile、name、kind 和参考图路径。
-6. manifest `reference_images` 中每个 `image_id + sha256` 必须能在上述精确版本找到；路径存在且磁盘 SHA256 相符。
-7. manifest 与 registry 的 image_id/sha256 不一致、引用缺失、越界路径或非法结构，均在 VLM 调用前 fail-loud。
+6. ★ 总控裁决 D14-REF-01（2026-10-01，采用 14-A 方案 B）：manifest
+   `reference_images` 允许包含不在 `profile_versions` 中的独立 `reference` 资产图片。
+   Resolver 必须遍历 registry 的全部资产与全部不可变版本，以 `image_id` 做全局反查，并要求
+   **恰好一处命中**，再绑定其 `asset_id + version + path + checksum`。命中版本状态只允许
+   `approved` 或 `superseded`。零命中、多命中、`active_version()` fallback、按路径/checksum
+   猜归属或静默跳过都禁止。
+7. 每个 reference 仍须满足 manifest sha256、Registry `ReferenceImage.checksum`、磁盘实际
+   SHA256 三方一致；路径存在且位于当前 project 内。reference 在 QA 请求中的次序仍完全服从
+   manifest 原始顺序，全局扫描顺序不得改变它。
+8. manifest 与 registry 的 image_id/sha256 不一致、引用缺失、越界路径或非法结构，均在 VLM 调用前 fail-loud。
 
 没有参考图时仍可按 approved profile 进行 QA，报告 `ground_truth_mode="profile_only"`；有参考图时为 `profile_and_references`。不得因为没有参考图而编造参考图。
 
@@ -480,6 +488,11 @@ Stage 14 新套件必须默认 Mock、0 网络、0 真实 API，并至少覆盖�
 1. 已存在且通过 SHA 校验的 Stage 13 generated manifest/image；
 2. 配置真实 vision/multimodal 模型与 API key；
 3. 用户明确批准；
+   - 批准必须包含本次调用的精确 `provider + model`；既有 API key 或曾批准其他模型
+     不构成当前模型授权。
+   - 若需切换模型（包括 fallback、重试改模、版本别名变化），先向用户报告原模型、
+     目标模型、原因、免费额度是否确认、预计调用次数与费用；额度未知按可能计费处理，
+     在用户明确同意前不得调用目标模型。
 4. `max_qa_images=1` 且 Provider retry 关闭或预算可严格证明；
 5. TokenLogger 与 APIRequestCounter 独立记账；
 6. 真实成本/调用数/模型/成功或失败如实写报告。
@@ -605,3 +618,111 @@ Stage 14 新套件必须默认 Mock、0 网络、0 真实 API，并至少覆盖�
 ```
 
 A 完成前 B 不开工；B 完成后 C；C 全绿后 D。A/B/C/D 是独立执行会话，不是并行子 Agent。
+
+---
+
+## 17. 实际交付与测试状态（2026-10-02 追加）
+
+> 本节只**追加**实际交付/测试状态，**不改写**上文 §1–§16 的设计契约。
+> 权威证据：`v2/logs/stage14_image_qa/stage14_report.md` 与 `test_report.json`。
+
+### 17.1 交付状态
+
+```text
+Stage 14-A  契约 / 架构分析        → v2/logs/stage14_image_qa/stage14_contract_notes.md   PASS（总控已裁决 D14-REF-01）
+Stage 14-B  实现                   → agents/image_qa.py + prompts/v0.2/image_qa.txt
+                                      + orchestration/image_qa_stage.py + pipeline 接线    PASS（最小 Mock 自检）
+Stage 14-C  正式测试 / Debug       → run_tests.py + test_report.json + run_real_image_qa.py
+                                      + 3 处最小修复（仅 image_qa_stage.py）→ 198/198      PASS
+Stage 14-D  文档 / 交付 / Git      → stage14_report.md + 六份长期文档 + 交付清单
+                                      （不 commit / 不 tag）                                本会话
+
+Stage 14 状态：实现与正式测试已完成，等待总控最终验收和 Git 封存（v0.2-stage14 未创建）
+```
+
+新增/修改文件与 §6.1/§6.2 的规划一致：新增 `agents/image_qa.py`、
+`prompts/v0.2/image_qa.txt`、`orchestration/image_qa_stage.py`、`logs/stage14_image_qa/`
+（`run_tests.py` / `run_real_image_qa.py` / `test_report.json` / `stage14_contract_notes.md` /
+`stage14_report.md`）；最小修改 `agents/__init__.py`、`orchestration/__init__.py`、
+`orchestration/pipeline.py`。`orchestration/state.py` **未修改**。
+
+### 17.2 正式测试结果
+
+```text
+Stage 14-C：198 / 198 PASS，rc = 0
+T01 12/12  T02 23/23  T03 22/22  T04 12/12  T05 17/17  T06 7/7  T07 21/21
+T08 17/17  T09 12/12  T10 19/19  T11 12/12  T12 11/11  T13 13/13
+real_api_requests = 0    network_requests = 0    model_switches = 0
+failures = []            regressions = []
+```
+
+198 条**只代表 Stage 14 正式套件**，不包含 Stage 13 或任何历史套件。
+
+### 17.3 14-C 修复的三个缺陷（仅 `orchestration/image_qa_stage.py`）
+
+1. QA index 重复 `image_id` 原可能被 dict comprehension **静默覆盖** → 改为 `_load_index()` 显式
+   fail-loud（T09-6）。
+2. resume 原可能直接信任 index 自报的 `downstream_eligible` → 改为按 Review approved-like +
+   本地重算 `qa_decision == "pass"` **复算**，不一致即 stale（T09-7 / T10-9）。
+3. `profile_versions` 插入顺序改变原先不会使 resume stale → 改为**有序**
+   `(asset_id, version)` 列表比较（T10-3b）。
+
+### 17.4 历史回归（原样记录，禁止美化）
+
+```text
+命令：python v2/logs/stage13_image/run_tests.py
+结果：144 / 146 PASS，rc = 1，耗时约 3572 秒（约 59.5 分钟）
+失败：T17a、T18-stage12
+```
+
+两项均为 **pre-commit 工作区清洁度护栏**：Stage 14 合法修改了 `v2/agents/__init__.py`，
+相对当前 HEAD 的检查必然看到 `v2/agents/__init__.py | 3 +++`。现有证据**未显示功能回归**。
+
+准确措辞：**Stage 14 套件全绿。Stage 13 历史套件功能项通过，但整套 rc=1；两个失败均是
+合法未提交 Stage 14 变更触发的 pre-commit 清洁度护栏。**
+禁止写成"Stage 13 146/146""全部回归 rc=0"或笼统的"历史回归全绿"。
+
+`test_report.json` 的 `regressions` 数组为空、**未承载**上述历史回归详情；
+历史回归结论以 `stage14_report.md` §9 为准，**不伪造、不回填**机器报告。
+
+### 17.5 真实服务边界（仍未验证）
+
+- 本阶段未运行任何真实 API、网络请求或模型切换。
+- `run_real_image_qa.py` 是**授权与参数的 preflight / guard scaffold**：默认拒绝路径已验证
+  （缺任一前置 → `rc = 2`、0 调用）；即使全部前置满足，也只打印 `PRECONDITIONS SATISFIED`
+  并返回 `rc = 3`，**不构造 Provider、不发真实请求**。
+- ★ **开放问题**：脚本对 `bailian` 检查 `DASHSCOPE_API_KEY`，而
+  `config.PROVIDERS["bailian_vision"]["api_key_env"]` 是 `BAILIAN_API_KEY` —— 两处**不一致**，
+  真实冒烟实现前必须先统一。
+- 因此"生成图 + 多张参考图"的真实多模态 Provider 连通性**仍未验证**。
+
+### 17.6 冻结边界（本阶段结束时静态核对）
+
+```text
+FilmAgent/ 0 diff；v2/core/ · v2/workflow/ · v2/review/ · v2/memory/ · v2/context/ · v2/llm/ 0 diff；
+v2/orchestration/image_stage.py 0 diff；仓库根 .gitignore 0 diff；历史测试与断言一个未动；
+v0.2-stage13 仍指向 3895c6c103f125d458fe648d80a625bf007601af（未移动）。
+```
+
+### 17.7 Git
+
+```text
+建议（未执行）：commit message = feat(v0.2): add VLM image QA (stage14)
+                tag            = v0.2-stage14
+tag 只能在总控验收通过 + 用户明确批准后创建；既有 tag 永不移动、永不 force。
+执行会话不自行宣布 Stage 14 已封存 / 已 commit / 已打 tag。
+```
+
+### 17.8 最终封存补记（2026-10-02，独立封存会话）
+
+用户随后明确要求独立封存 Stage 14。本节记录**封存后的最终状态**，上文 §17.1–§17.7
+和 Stage 14-D 报告正文仍保留各自生成时的历史快照，不据此宣称封存后重新运行了测试。
+
+- Stage 14 已独立 commit，并以 `v0.2-stage14` 指向该 commit；精确 hash 由
+  `git rev-parse v0.2-stage14^{commit}` 查询，既有 `v0.2-stage13` tag 不移动。
+- 封存前 Stage 14-C 的 `test_report.json` 记录 **198/198、rc=0、0 真实 API/网络/模型切换**；
+  封存会话只静态复核该报告，未重跑测试。Stage 13 历史回归的 **144/146、rc=1**
+  仍是封存前记录，两个失败是当时未提交的 Stage 14 修改触发的 pre-commit 清洁度护栏；
+  封存后尚未复跑，不预测其新结果。
+- `v2/docs/stages/Stage_15.md` 是 Stage 15 规格，不纳入 Stage 14 commit。
+- 真实多图 VLM 连通性仍未验证；冒烟脚本仍只是 preflight/guard scaffold。

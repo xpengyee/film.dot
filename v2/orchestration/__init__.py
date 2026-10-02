@@ -34,6 +34,11 @@ from orchestration.image_stage import (
     DEFAULT_IMAGE_SIZE,
     DEFAULT_MAX_IMAGES,
 )
+from orchestration.image_qa_stage import (
+    ImageQAStage,
+    QA_DIR_NAME,
+    QA_MANIFEST_FILENAME,
+)
 from orchestration.pipeline import ProjectOrchestrator
 
 __all__ = [
@@ -53,4 +58,8 @@ __all__ = [
     "LEDGER_FILENAME",
     "DEFAULT_IMAGE_SIZE",
     "DEFAULT_MAX_IMAGES",
+    # ---- Stage 14：VLM Image QA ----
+    "ImageQAStage",
+    "QA_DIR_NAME",
+    "QA_MANIFEST_FILENAME",
 ]

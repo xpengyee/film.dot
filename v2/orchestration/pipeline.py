@@ -85,6 +85,7 @@ from agents.storyboard import StoryboardAgent, StoryboardStep
 from agents.visual_asset import VisualAssetAgent, VisualAssetStep
 
 from orchestration.image_stage import ImageStage
+from orchestration.image_qa_stage import ImageQAStage
 from orchestration.preflight import preflight_check, format_gaps
 from orchestration.state import (
     OrchestrationError,
@@ -181,6 +182,8 @@ class ProjectOrchestrator:
     :param image_log_dir:  图像账目录（缺省 `v2/logs/stage13_image/`；测试注入 tmp）。
     :param image_fetch:    URL 形态图片引用的下载器（缺省 stdlib urllib；
                            测试注入假下载器 → 0 网络）。
+    :param qa_provider:    Stage 14 多模态 QA Provider；None 时保持惰性，只有
+                           QA 开启、预检/resume 后仍有待处理图片才构造默认档。
     """
 
     def __init__(
@@ -196,6 +199,7 @@ class ProjectOrchestrator:
         image_provider: Any = None,
         image_log_dir: Optional[Path] = None,
         image_fetch: Optional[Callable[[str], bytes]] = None,
+        qa_provider: Any = None,
     ):
         if not isinstance(project, Project):
             raise OrchestrationError(
@@ -231,6 +235,9 @@ class ProjectOrchestrator:
                                else self._default_image_provider())
         self.image_log_dir = Path(image_log_dir) if image_log_dir else None
         self.image_fetch = image_fetch
+        # ---- Stage 14：QA Provider 必须惰性构造。None 仅保存哨兵，直到
+        # run_image_qa=True、预检/resume 完成且确有待执行项时才由 ImageQAStage 创建。
+        self.qa_provider = qa_provider
         #: 本次 run 的项目级风格规范（run_spec["style_spec"]；STYLE 资产由它建档）
         self._style_spec: dict = {}
 
@@ -285,6 +292,12 @@ class ProjectOrchestrator:
                              （不硬出图）；不提供时视觉资产计数与 Stage 12 一致。
             style_name       风格资产名（缺省 "default"）。
 
+            ★ Stage 14（VLM Image QA，默认关闭）：
+            run_image_qa     是否运行 QA（缺省 False）。
+            qa_image_ids     可选 image_id 列表；空/缺省 = 全部 generated。
+            max_qa_images    本次上限（缺省 3，且受 vision 硬上限约束）。
+            qa_resume        是否复用完整锚点一致的已批准 QA（缺省 True）。
+
         :return: run_report（dict；同时落盘 `orchestration/run_<run_id>.json`）。
         :raises OrchestrationError: 入参非法 / human_stub / 视觉资产遇到编辑态决策 /
                                     编排层不变量被破坏。
@@ -324,6 +337,7 @@ class ProjectOrchestrator:
                 "scenes": {str(sid): {} for sid in scene_ids},
                 "visual_assets": {"registered": [], "pending": []},
                 "image": {},
+                "image_qa": {},
             },
             "completeness": {
                 "scenes_total": len(scene_ids), "scenes_done": 0,
@@ -371,7 +385,11 @@ class ProjectOrchestrator:
         report["stages"]["image"] = self._stage_images(
             storyboards, episode, spec, handler, report)
 
-        # ---------------- ⑤ 齐备判定 + 落盘 ----------------
+        # ---------------- ⑤ VLM Image QA（Stage 14，默认关闭） ----------------
+        report["stages"]["image_qa"] = self._stage_image_qa(
+            spec, handler, max_attempts, report)
+
+        # ---------------- ⑥ 齐备判定 + 落盘 ----------------
         self._compute_completeness(scene_ids, entities, report)
         report["status"] = self._decide_status(report)
         return self._finish(report, run_id)
@@ -1000,6 +1018,25 @@ class ProjectOrchestrator:
             state=self.state,
         )
         return stage.run(storyboards, spec)
+
+    # ------------------------------------------------------------------
+    # ⑤ VLM Image QA（Stage 14；只读 Stage 13 manifest/image）
+    # ------------------------------------------------------------------
+    def _stage_image_qa(self, spec: dict, handler: Callable,
+                        max_attempts: int, report: dict) -> dict:
+        """Run the optional QA gate without changing completeness semantics."""
+        stage = ImageQAStage(
+            project_id=self.project_id,
+            project_dir=self.project_dir,
+            artifacts_dir=self.artifacts_dir,
+            store=self.store,
+            registry=self.visual_registry,
+            review_handler=handler,
+            provider=self.qa_provider,
+            review_mode=str(report.get("review_mode", "") or ""),
+            max_attempts=max_attempts,
+        )
+        return stage.run(spec)
 
     # ------------------------------------------------------------------
     # 读盘 / 完成度 / 收尾

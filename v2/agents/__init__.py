@@ -24,6 +24,7 @@ from agents.base import LLMAgent, LLMStep
 from agents.casting import CastingAgent, CastingStep
 from agents.scene_generation import SceneGenerationAgent, SceneGenerationStep
 from agents.storyboard import StoryboardAgent, StoryboardStep
+from agents.image_qa import ImageQAAgent, ImageQAStep
 
 __all__ = [
     "LLMAgent",
@@ -34,4 +35,6 @@ __all__ = [
     "SceneGenerationStep",
     "StoryboardAgent",
     "StoryboardStep",
+    "ImageQAAgent",
+    "ImageQAStep",
 ]

@@ -1,0 +1,1290 @@
+{
+  "stage": "14-C",
+  "head": "1a7404942edb6e493091a449256da5a75d456ccc",
+  "started_at": "2026-10-01T18:22:27.230+00:00",
+  "ended_at": "2026-10-01T18:22:57.620+00:00",
+  "tests_total": 198,
+  "passed": 198,
+  "failed": 0,
+  "groups": [
+    {
+      "id": "T01",
+      "passed": 12,
+      "total": 12,
+      "failed": 0
+    },
+    {
+      "id": "T02",
+      "passed": 23,
+      "total": 23,
+      "failed": 0
+    },
+    {
+      "id": "T03",
+      "passed": 22,
+      "total": 22,
+      "failed": 0
+    },
+    {
+      "id": "T04",
+      "passed": 12,
+      "total": 12,
+      "failed": 0
+    },
+    {
+      "id": "T05",
+      "passed": 17,
+      "total": 17,
+      "failed": 0
+    },
+    {
+      "id": "T06",
+      "passed": 7,
+      "total": 7,
+      "failed": 0
+    },
+    {
+      "id": "T07",
+      "passed": 21,
+      "total": 21,
+      "failed": 0
+    },
+    {
+      "id": "T08",
+      "passed": 17,
+      "total": 17,
+      "failed": 0
+    },
+    {
+      "id": "T09",
+      "passed": 12,
+      "total": 12,
+      "failed": 0
+    },
+    {
+      "id": "T10",
+      "passed": 19,
+      "total": 19,
+      "failed": 0
+    },
+    {
+      "id": "T11",
+      "passed": 12,
+      "total": 12,
+      "failed": 0
+    },
+    {
+      "id": "T12",
+      "passed": 11,
+      "total": 11,
+      "failed": 0
+    },
+    {
+      "id": "T13",
+      "passed": 13,
+      "total": 13,
+      "failed": 0
+    }
+  ],
+  "real_api_requests": 0,
+  "network_requests": 0,
+  "model_switches": 0,
+  "regressions": [],
+  "freeze_checks": {
+    "frozen_paths_clean": true,
+    "filmagent_0_diff": true,
+    "stage13_tag": "3895c6c103f125d458fe648d80a625bf007601af",
+    "stage13_tag_ok": true
+  },
+  "failures": [],
+  "results": [
+    {
+      "id": "T01-1a",
+      "name": "T01-1a ImageQAAgent 公开接口存在",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T01-1b",
+      "name": "T01-1b ImageQAStep 公开接口存在（needs_review=True）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T01-1c",
+      "name": "T01-1c ImageQAStage 公开接口存在",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T01-1d",
+      "name": "T01-1d 纯函数契约导出（expected_checks/validator/qa_decision）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T01-2a",
+      "name": "T01-2a Prompt 文件存在",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T01-2b",
+      "name": "T01-2b Prompt 含 exact check / verdict / negative_cues / 多图顺序",
+      "ok": true,
+      "detail": "len=841"
+    },
+    {
+      "id": "T01-3",
+      "name": "T01-3 冻结边界 0 diff（FilmAgent/core/workflow/review/provider/counter/image_stage）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T01-4",
+      "name": "T01-4 Stage13 manifest schema 与 Canonical Shot/Storyboard schema 未改",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T01-5",
+      "name": "T01-5 v0.2-stage13 仍指向固定 commit",
+      "ok": true,
+      "detail": "3895c6c103f125d458fe648d80a625bf007601af"
+    },
+    {
+      "id": "T01-6a",
+      "name": "T01-6a 新实现无直接 requests/urllib/SDK/socket 网络调用",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "id": "T01-6b",
+      "name": "T01-6b 未新增第二请求计数器（无 Counter 类定义）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T01-6c",
+      "name": "T01-6c 计数只经 llm.request_counter 单例/注入",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T02-1",
+      "name": "T02-1 manifest 结构错误被拒（顶层非对象）",
+      "ok": true,
+      "detail": "Stage 13 manifest.images 必须是列表"
+    },
+    {
+      "id": "T02-1",
+      "name": "T02-1 manifest 结构错误被拒（版本错误）",
+      "ok": true,
+      "detail": "Stage 13 manifest.images 必须是列表"
+    },
+    {
+      "id": "T02-1",
+      "name": "T02-1 manifest 结构错误被拒（project_id 错）",
+      "ok": true,
+      "detail": "Stage 13 manifest.images 必须是列表"
+    },
+    {
+      "id": "T02-1",
+      "name": "T02-1 manifest 结构错误被拒（images 非列表）",
+      "ok": true,
+      "detail": "Stage 13 manifest.images 必须是列表"
+    },
+    {
+      "id": "T02-2",
+      "name": "T02-2 generated 缺 image_id 被拒",
+      "ok": true,
+      "detail": "generated manifest 条目 0 缺少 image_id/shot_ref/path/sha256"
+    },
+    {
+      "id": "T02-2",
+      "name": "T02-2 generated 缺 shot_ref 被拒",
+      "ok": true,
+      "detail": "generated manifest 条目 0 缺少 image_id/shot_ref/path/sha256"
+    },
+    {
+      "id": "T02-2",
+      "name": "T02-2 generated 缺 path 被拒",
+      "ok": true,
+      "detail": "generated manifest 条目 0 缺少 image_id/shot_ref/path/sha256"
+    },
+    {
+      "id": "T02-2",
+      "name": "T02-2 generated 缺 sha256 被拒",
+      "ok": true,
+      "detail": "generated manifest 条目 0 缺少 image_id/shot_ref/path/sha256"
+    },
+    {
+      "id": "T02-3",
+      "name": "T02-3 generated image_id 重复被拒",
+      "ok": true,
+      "detail": "generated image_id 重复: GEN_001"
+    },
+    {
+      "id": "T02-4",
+      "name": "T02-4 只选择 status=generated（failed/skipped/rejected 排除）",
+      "ok": true,
+      "detail": "['GEN_001']"
+    },
+    {
+      "id": "T02-5",
+      "name": "T02-5 缺省保持 manifest 顺序",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T02-6a",
+      "name": "T02-6a qa_image_ids 保持用户顺序",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T02-6b",
+      "name": "T02-6b qa_image_ids 未知 ID 被拒",
+      "ok": true,
+      "detail": "qa_image_ids 含未知或非 generated ID: GEN_999"
+    },
+    {
+      "id": "T02-6b",
+      "name": "T02-6b qa_image_ids 重复 ID 被拒",
+      "ok": true,
+      "detail": "qa_image_ids 含重复 ID: GEN_001"
+    },
+    {
+      "id": "T02-6b",
+      "name": "T02-6b qa_image_ids 空值 被拒",
+      "ok": true,
+      "detail": "qa_image_ids 只能包含非空字符串"
+    },
+    {
+      "id": "T02-6b",
+      "name": "T02-6b qa_image_ids 类型错 被拒",
+      "ok": true,
+      "detail": "qa_image_ids 必须是 image_id 列表"
+    },
+    {
+      "id": "T02-6b",
+      "name": "T02-6b qa_image_ids 非字符串 被拒",
+      "ok": true,
+      "detail": "qa_image_ids 只能包含非空字符串"
+    },
+    {
+      "id": "T02-7a",
+      "name": "T02-7a max_qa_images 负数 被拒",
+      "ok": true,
+      "detail": "max_qa_images 不能为负数"
+    },
+    {
+      "id": "T02-7a",
+      "name": "T02-7a max_qa_images 布尔 被拒",
+      "ok": true,
+      "detail": "max_qa_images 必须是整数"
+    },
+    {
+      "id": "T02-7a",
+      "name": "T02-7a max_qa_images 非整数 被拒",
+      "ok": true,
+      "detail": "max_qa_images 必须是整数"
+    },
+    {
+      "id": "T02-7b",
+      "name": "T02-7b max_qa_images=0 → 零选择",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T02-7c",
+      "name": "T02-7c max_qa_images>3 收紧为 3（MAX_REAL_VISION_REQUESTS）",
+      "ok": true,
+      "detail": "len=3"
+    },
+    {
+      "id": "T02-8",
+      "name": "T02-8 结构/选择失败在 Provider 构造前（factory 0 调用）",
+      "ok": true,
+      "detail": "err=OrchestrationError factory=0 chat=0"
+    },
+    {
+      "id": "T03-1",
+      "name": "T03-1 manifest 指向 v1、active 已是 v2 → 仍用 v1",
+      "ok": true,
+      "detail": "used=v1 active=v2"
+    },
+    {
+      "id": "T03-2",
+      "name": "T03-2 版本状态 approved 可用",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T03-2",
+      "name": "T03-2 版本状态 superseded 可用",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T03-2",
+      "name": "T03-2 版本状态 draft 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T03-2",
+      "name": "T03-2 版本状态 generated 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T03-2",
+      "name": "T03-2 版本状态 reviewing 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T03-2",
+      "name": "T03-2 版本状态 rejected 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T03-2",
+      "name": "T03-2 版本状态 archived 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T03-3a",
+      "name": "T03-3a profile_versions 资产不存在被拒",
+      "ok": true,
+      "detail": "profile_versions 资产不存在: CHAR_999"
+    },
+    {
+      "id": "T03-3b",
+      "name": "T03-3b 精确版本不存在被拒",
+      "ok": true,
+      "detail": "精确视觉版本不存在: CHAR_001:v9"
+    },
+    {
+      "id": "T03-3c",
+      "name": "T03-3c kind/profile 类型不匹配被拒",
+      "ok": true,
+      "detail": "精确视觉版本缺少与 kind 匹配的 profile: CHAR_001:v1"
+    },
+    {
+      "id": "T03-4",
+      "name": "T03-4 profile_versions 空 mapping 被拒",
+      "ok": true,
+      "detail": "profile_versions 必须是非空 mapping"
+    },
+    {
+      "id": "T03-4",
+      "name": "T03-4 profile_versions 类型错 被拒",
+      "ok": true,
+      "detail": "profile_versions 必须是非空 mapping"
+    },
+    {
+      "id": "T03-4",
+      "name": "T03-4 profile_versions 空键 被拒",
+      "ok": true,
+      "detail": "profile_versions 的键和值必须是非空字符串"
+    },
+    {
+      "id": "T03-4",
+      "name": "T03-4 profile_versions 空值 被拒",
+      "ok": true,
+      "detail": "profile_versions 的键和值必须是非空字符串"
+    },
+    {
+      "id": "T03-5",
+      "name": "T03-5 profile 顺序 = manifest mapping 插入顺序",
+      "ok": true,
+      "detail": "['CHAR_002', 'CHAR_001']"
+    },
+    {
+      "id": "T03-6",
+      "name": "T03-6 单 profile 字段顺序严格来自 FIELD_ORDER",
+      "ok": true,
+      "detail": "['appearance', 'face', 'hair', 'clothing', 'body', 'color_palette', 'distinguishing_features', 'visual_style', 'negative_cues']"
+    },
+    {
+      "id": "T03-7a",
+      "name": "T03-7a 空字段不生成 check（仅 4 个非空 character 字段）",
+      "ok": true,
+      "detail": "['appearance', 'face', 'hair', 'clothing', 'medium', 'palette', 'rendering']"
+    },
+    {
+      "id": "T03-7b",
+      "name": "T03-7b Style notes 不评分",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T03-7c",
+      "name": "T03-7c version notes 不当真值（不进检查集）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T03-8",
+      "name": "T03-8 negative_cues 恰好一个逆语义 check",
+      "ok": true,
+      "detail": "n=1"
+    },
+    {
+      "id": "T03-9",
+      "name": "T03-9 无可评分字段 → 预检失败且 0 Provider 调用",
+      "ok": true,
+      "detail": "failed=1 factory=0"
+    },
+    {
+      "id": "T04-1",
+      "name": "T04-1 独立 REF_* approved reference 可解析",
+      "ok": true,
+      "detail": "[{'image_id': 'IMG_001', 'sha256': 'e5f670aba84647d7f4b6da60ea82b6e3be23b3ec04f0fd54d3e94e80a9547729', 'path': WindowsPath('D:/AI/FilmAgent-main/v2/logs/stage14_image_qa/tmp_projects/t04a/refs/pose1.png'), 'asset_id': 'REF_001', 'version': 'v1'}]"
+    },
+    {
+      "id": "T04-3",
+      "name": "T04-3 reference 位于 profile_versions 外仍可解析",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T04-2",
+      "name": "T04-2 superseded reference 版本可解析且不漂移到 active",
+      "ok": true,
+      "detail": "used=v1"
+    },
+    {
+      "id": "T04-4",
+      "name": "T04-4 全局零命中被拒（Provider 调用 0）",
+      "ok": true,
+      "detail": "D14-REF-01 要求 reference IMG_999 全局恰好一处命中，实际 0"
+    },
+    {
+      "id": "T04-5",
+      "name": "T04-5 同一 image_id 跨资产多命中被拒",
+      "ok": true,
+      "detail": "D14-REF-01 要求 reference IMG_001 全局恰好一处命中，实际 2"
+    },
+    {
+      "id": "T04-6",
+      "name": "T04-6 同一 image_id 跨版本多命中被拒",
+      "ok": true,
+      "detail": "D14-REF-01 要求 reference IMG_001 全局恰好一处命中，实际 2"
+    },
+    {
+      "id": "T04-7",
+      "name": "T04-7 reference 命中 draft 版本被拒",
+      "ok": true,
+      "detail": "reference IMG_001 所属版本状态非法: draft"
+    },
+    {
+      "id": "T04-7",
+      "name": "T04-7 reference 命中 rejected 版本被拒",
+      "ok": true,
+      "detail": "reference IMG_001 所属版本状态非法: rejected"
+    },
+    {
+      "id": "T04-7",
+      "name": "T04-7 reference 命中 archived 版本被拒",
+      "ok": true,
+      "detail": "reference IMG_001 所属版本状态非法: archived"
+    },
+    {
+      "id": "T04-8",
+      "name": "T04-8 manifest reference image_id 重复被拒",
+      "ok": true,
+      "detail": "reference_images 含重复 image_id: IMG_001"
+    },
+    {
+      "id": "T04-9",
+      "name": "T04-9 不按 checksum/path 猜测归属（image_id 未命中即失败）",
+      "ok": true,
+      "detail": "D14-REF-01 要求 reference IMG_777 全局恰好一处命中，实际 0"
+    },
+    {
+      "id": "T04-10",
+      "name": "T04-10 registry 扫描顺序变化不改变 manifest reference 顺序",
+      "ok": true,
+      "detail": "a=['IMG_003', 'IMG_001'] b=['IMG_003', 'IMG_002']"
+    },
+    {
+      "id": "T05-1",
+      "name": "T05-1 项目内相对路径通过",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T05-2",
+      "name": "T05-2 项目内绝对路径通过且持久化为相对 POSIX",
+      "ok": true,
+      "detail": "generated_images/GEN_001.png"
+    },
+    {
+      "id": "T05-3a",
+      "name": "T05-3a 缺失文件被拒",
+      "ok": true,
+      "detail": "generated image 文件不存在或无法解析"
+    },
+    {
+      "id": "T05-3b",
+      "name": "T05-3b 目录被拒",
+      "ok": true,
+      "detail": "generated image 必须指向普通文件"
+    },
+    {
+      "id": "T05-3c",
+      "name": "T05-3c 空路径被拒",
+      "ok": true,
+      "detail": "generated image 路径为空或类型非法"
+    },
+    {
+      "id": "T05-4a",
+      "name": "T05-4a '..' 逃逸被拒",
+      "ok": true,
+      "detail": "generated image 路径包含禁止的 '..' 段"
+    },
+    {
+      "id": "T05-4b",
+      "name": "T05-4b 同名前缀兄弟目录（绝对）被拒",
+      "ok": true,
+      "detail": "generated image 路径越出项目目录"
+    },
+    {
+      "id": "T05-4c",
+      "name": "T05-4c 其他盘符 路径被拒",
+      "ok": true,
+      "detail": "generated image 文件不存在或无法解析"
+    },
+    {
+      "id": "T05-4c",
+      "name": "T05-4c UNC 路径被拒",
+      "ok": true,
+      "detail": "generated image 文件不存在或无法解析"
+    },
+    {
+      "id": "T05-5",
+      "name": "T05-5 symlink 指向项目外被拒",
+      "ok": true,
+      "detail": "generated manifest SHA256 与磁盘文件不一致"
+    },
+    {
+      "id": "T05-6a",
+      "name": "T05-6a 非 64-hex sha 被拒",
+      "ok": true,
+      "detail": "generated sha256 必须是 64 位十六进制 SHA256"
+    },
+    {
+      "id": "T05-6b",
+      "name": "T05-6b sha 大小写可规范化（小写存储）",
+      "ok": true,
+      "detail": "ae0da9fe8cdf46688361e80ce3ca78fc9e7892bbc7871b53297fe45c9483f68f"
+    },
+    {
+      "id": "T05-7",
+      "name": "T05-7 generated manifest/disk SHA 不一致被拒",
+      "ok": true,
+      "detail": "generated manifest SHA256 与磁盘文件不一致"
+    },
+    {
+      "id": "T05-8a",
+      "name": "T05-8a reference manifest sha 不一致被拒",
+      "ok": true,
+      "detail": "reference IMG_001 的 manifest/registry/disk SHA256 不一致"
+    },
+    {
+      "id": "T05-8b",
+      "name": "T05-8b reference registry checksum 不一致被拒",
+      "ok": true,
+      "detail": "reference IMG_001 的 manifest/registry/disk SHA256 不一致"
+    },
+    {
+      "id": "T05-8c",
+      "name": "T05-8c reference disk sha 不一致被拒",
+      "ok": true,
+      "detail": "reference IMG_001 的 manifest/registry/disk SHA256 不一致"
+    },
+    {
+      "id": "T05-9",
+      "name": "T05-9 路径/SHA 预检失败 = 0 Provider 调用",
+      "ok": true,
+      "detail": "failed=1 factory=0"
+    },
+    {
+      "id": "T06-1",
+      "name": "T06-1 images[0] 始终是 generated",
+      "ok": true,
+      "detail": "(WindowsPath('D:/AI/FilmAgent-main/v2/logs/stage14_image_qa/tmp_projects/t06/generated_images/GEN_001.png'),)"
+    },
+    {
+      "id": "T06-2",
+      "name": "T06-2 images[1:] 完全遵循 manifest reference 顺序",
+      "ok": true,
+      "detail": "['pose1.png', 'pose2.png']"
+    },
+    {
+      "id": "T06-3",
+      "name": "T06-3 Prompt Image 位置标签与 tuple 一致",
+      "ok": true,
+      "detail": "{\"generated\": {\"position\": 0, \"image_id\": \"GEN_001\"}, \"references\": [{\"position\": 1, \"image_id\": \"IMG_001\", \"asset_id\": \"REF_001\", \"version\": \"v1\"}, {\"position\": 2, \"image_id\": \"IMG_002\", \"asset_id\": \"REF_002\", \"version\": \"v1\"}]}"
+    },
+    {
+      "id": "T06-4a",
+      "name": "T06-4a Prompt 含 expected checks",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T06-4b",
+      "name": "T06-4b Prompt 含 negative_cues 逆语义规则",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T06-5",
+      "name": "T06-5 Prompt/Artifact/index 不含绝对路径、API key、base64",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "id": "T06-6",
+      "name": "T06-6 一图一次调用（无额外模型调用）",
+      "ok": true,
+      "detail": "calls=1 attempted=1"
+    },
+    {
+      "id": "T07-1",
+      "name": "T07-1 全 match → pass",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-2",
+      "name": "T07-2 任一 mismatch 优先 → fail",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-3",
+      "name": "T07-3 无 mismatch 且存在 uncertain → needs_review",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-4a",
+      "name": "T07-4a 顶层非对象被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-4b",
+      "name": "T07-4b checks 非列表/空被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-4c",
+      "name": "T07-4c summary 非字符串被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-5a",
+      "name": "T07-5a 未知顶层字段被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-5b",
+      "name": "T07-5b 模型自报 qa_decision/provider/model 被忽略（本地重算 fail）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-6",
+      "name": "T07-6 check 缺字段 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-6",
+      "name": "T07-6 check 额外字段 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-6",
+      "name": "T07-6 check 类型错 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-7",
+      "name": "T07-7 缺 check 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-7",
+      "name": "T07-7 重复 key 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-7",
+      "name": "T07-7 未知 field 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-8",
+      "name": "T07-8 expected 被改写被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-9",
+      "name": "T07-9 非法 verdict 被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-10a",
+      "name": "T07-10a 非 match evidence 为空被拒",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-10b",
+      "name": "T07-10b match evidence 可为空",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-11",
+      "name": "T07-11 Provider 返回乱序 → 按 expected 顺序规范化",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T07-12",
+      "name": "T07-12 模型身份与批准配置不一致 → 不可重试失败",
+      "ok": true,
+      "detail": "StepError retryable=False"
+    },
+    {
+      "id": "T07-13",
+      "name": "T07-13 Provider 异常仅暴露安全错误类型（无路径/传输细节）",
+      "ok": true,
+      "detail": "Image QA Provider 调用失败: LLMConnectionError"
+    },
+    {
+      "id": "T08-1",
+      "name": "T08-1 每图独立 Workflow/Step/Artifact，base name 正确",
+      "ok": true,
+      "detail": "artifacts/image_qa_gen_001.json"
+    },
+    {
+      "id": "T08-3",
+      "name": "T08-3 approved：最终 Artifact 二次验证并写 index",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-9",
+      "name": "T08-9 QA pass 且 Review approved-like → downstream_eligible=true",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-2",
+      "name": "T08-2 重跑生成 _v2 且旧 Artifact 字节不变",
+      "ok": true,
+      "detail": "['image_qa_gen_001.json', 'image_qa_gen_001_v2.json']"
+    },
+    {
+      "id": "T08-4",
+      "name": "T08-4 approved_with_edit 合法编辑：写新 Artifact、重算 qa_decision",
+      "ok": true,
+      "detail": "decision=fail eligible=False"
+    },
+    {
+      "id": "T08-5",
+      "name": "T08-5 approved_with_edit 篡改 generated_sha256 → 失败",
+      "ok": true,
+      "detail": "failed=1 pass=0"
+    },
+    {
+      "id": "T08-5",
+      "name": "T08-5 approved_with_edit 篡改 provider → 失败",
+      "ok": true,
+      "detail": "failed=1 pass=0"
+    },
+    {
+      "id": "T08-5",
+      "name": "T08-5 approved_with_edit 篡改 model → 失败",
+      "ok": true,
+      "detail": "failed=1 pass=0"
+    },
+    {
+      "id": "T08-5",
+      "name": "T08-5 approved_with_edit 篡改 request_id → 失败",
+      "ok": true,
+      "detail": "failed=1 pass=0"
+    },
+    {
+      "id": "T08-5",
+      "name": "T08-5 approved_with_edit 篡改 retry_count → 失败",
+      "ok": true,
+      "detail": "failed=1 pass=0"
+    },
+    {
+      "id": "T08-5",
+      "name": "T08-5 approved_with_edit 篡改 created_at → 失败",
+      "ok": true,
+      "detail": "failed=1 pass=0"
+    },
+    {
+      "id": "T08-6",
+      "name": "T08-6 approved_with_edit 缺 check → 失败",
+      "ok": true,
+      "detail": "failed=1 pass=0"
+    },
+    {
+      "id": "T08-6",
+      "name": "T08-6 approved_with_edit 加 check → 失败",
+      "ok": true,
+      "detail": "failed=1 pass=0"
+    },
+    {
+      "id": "T08-6",
+      "name": "T08-6 approved_with_edit 非法决定 → 失败",
+      "ok": true,
+      "detail": "failed=1 pass=0"
+    },
+    {
+      "id": "T08-7",
+      "name": "T08-7 rejected：保留 Artifact、index 可审计、downstream_eligible=false",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-8",
+      "name": "T08-8 QA fail 但 Review approved → 记录 fail 且 downstream_eligible=false",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-10",
+      "name": "T08-10 QA/Review 不修改生成图 / Stage13 manifest / Registry",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T09-1a",
+      "name": "T09-1a 首次写入顶层 version/project_id/images 合法",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T09-1b",
+      "name": "T09-1b 原子写：无残留 *.tmp",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "id": "T09-3",
+      "name": "T09-3 Artifact 路径只保存项目相对路径，sha 正确",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T09-4",
+      "name": "T09-4 workflow/review/qa_decision/provider/model 与实际一致",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T09-8",
+      "name": "T09-8 index 不复制完整 checks（不是第二状态机）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T09-2",
+      "name": "T09-2 更新同 image_id 替换该项，其他图片记录不变",
+      "ok": true,
+      "detail": "n=2"
+    },
+    {
+      "id": "T09-5",
+      "name": "T09-5 index 损坏 JSON → fail-loud",
+      "ok": true,
+      "detail": "QA index 无法读取或不是合法 JSON"
+    },
+    {
+      "id": "T09-5",
+      "name": "T09-5 index version 错 → fail-loud",
+      "ok": true,
+      "detail": "QA index 顶层结构非法"
+    },
+    {
+      "id": "T09-5",
+      "name": "T09-5 index project_id 错 → fail-loud",
+      "ok": true,
+      "detail": "QA index 顶层结构非法"
+    },
+    {
+      "id": "T09-5",
+      "name": "T09-5 index images 类型错 → fail-loud",
+      "ok": true,
+      "detail": "QA index 顶层结构非法"
+    },
+    {
+      "id": "T09-6",
+      "name": "T09-6 index 重复 image_id → fail-loud",
+      "ok": true,
+      "detail": "QA index 含重复 image_id: GEN_001"
+    },
+    {
+      "id": "T09-7",
+      "name": "T09-7 index 自报 downstream_eligible 不被信任（按 Review+QA 重算）",
+      "ok": true,
+      "detail": "resumed=0 eligible=True decision=pass"
+    },
+    {
+      "id": "T10-0",
+      "name": "T10-0 完整命中：resumed=1 且 factory/chat 0、预算不消费",
+      "ok": true,
+      "detail": "resumed=1 factory=0"
+    },
+    {
+      "id": "T10-1a",
+      "name": "T10-1a generated path/sha 变化 → 不 resumed 且重跑",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-1b",
+      "name": "T10-1b 磁盘内容变化（manifest sha 不符）→ 不 resumed（预检拦截）",
+      "ok": true,
+      "detail": "resumed=0 failed=1"
+    },
+    {
+      "id": "T10-2",
+      "name": "T10-2 shot_ref 变化 → 不 resumed 且重跑",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-3a",
+      "name": "T10-3a profile_versions 内容变化 → 不 resumed",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-3b",
+      "name": "T10-3b profile_versions 插入顺序变化 → 不 resumed",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-4",
+      "name": "T10-4 reference 顺序变化 → 不 resumed",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-5",
+      "name": "T10-5 Artifact 缺失 → 不 resumed 且重跑",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-5",
+      "name": "T10-5 Artifact 越界 → 不 resumed 且重跑",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-5",
+      "name": "T10-5 Artifact hash 改变 → 不 resumed 且重跑",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-5",
+      "name": "T10-5 Artifact JSON 损坏 → 不 resumed 且重跑",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-5",
+      "name": "T10-5 Artifact Schema 非法 → 不 resumed 且重跑",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-6",
+      "name": "T10-6 Artifact qa_decision 与重算不一致 → 不 resumed",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-7",
+      "name": "T10-7 Workflow 非 success → 不 resumed",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-7",
+      "name": "T10-7 Step 非 approved-like → 不 resumed",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-7",
+      "name": "T10-7 Review 非 approved-like → 不 resumed",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-8",
+      "name": "T10-8 provider/model 变化 → 不 resumed（身份锚点）",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-9",
+      "name": "T10-9 index downstream_eligible 与重算不一致 → 不 resumed",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T10-10",
+      "name": "T10-10 qa_resume=false 强制重跑且保留旧 Artifact",
+      "ok": true,
+      "detail": "resumed=0"
+    },
+    {
+      "id": "T11-1a",
+      "name": "T11-1a budget_kind=vision 可用且成功",
+      "ok": true,
+      "detail": "pass=1 real=1"
+    },
+    {
+      "id": "T11-1b",
+      "name": "T11-1b budget_kind=multimodal 调用前拒绝",
+      "ok": true,
+      "detail": "真实 QA Provider budget_kind 必须为 'vision'，实际 'multimodal'"
+    },
+    {
+      "id": "T11-1b",
+      "name": "T11-1b budget_kind=text 调用前拒绝",
+      "ok": true,
+      "detail": "真实 QA Provider budget_kind 必须为 'vision'，实际 'text'"
+    },
+    {
+      "id": "T11-1b",
+      "name": "T11-1b budget_kind=image 调用前拒绝",
+      "ok": true,
+      "detail": "真实 QA Provider budget_kind 必须为 'vision'，实际 'image'"
+    },
+    {
+      "id": "T11-2a",
+      "name": "T11-2a 非 mock 且无 budget_kind → 拒绝",
+      "ok": true,
+      "detail": "真实 QA Provider 必须声明 budget_kind='vision'"
+    },
+    {
+      "id": "T11-2b",
+      "name": "T11-2b 缺 chat 调用面 → 拒绝",
+      "ok": true,
+      "detail": "QA Provider 不具备 MultimodalProvider.chat 调用面"
+    },
+    {
+      "id": "T11-3",
+      "name": "T11-3 Provider 内 retry 累计到同一 vision 桶",
+      "ok": true,
+      "detail": "real=2 attempts=2"
+    },
+    {
+      "id": "T11-4",
+      "name": "T11-4 第 N+1 次在发送前拒绝（cap=1，第 2 次 attempt 被拒）",
+      "ok": true,
+      "detail": "real=1 rej=1 consumed=1"
+    },
+    {
+      "id": "T11-5",
+      "name": "T11-5 预算耗尽后停止剩余图片（attempted < selected）",
+      "ok": true,
+      "detail": "selected=3 attempted=2 calls=2 real=3"
+    },
+    {
+      "id": "T11-6",
+      "name": "T11-6 不逐图重置 counter / 不扩大 cap（累计计数=2，预算=2）",
+      "ok": true,
+      "detail": "real=2 budget={'vision': 2, 'image': 3}"
+    },
+    {
+      "id": "T11-7",
+      "name": "T11-7 Provider 实例身份与预检 identity 不一致 → 零调用失败",
+      "ok": true,
+      "detail": "OrchestrationError chat=0"
+    },
+    {
+      "id": "T11-8",
+      "name": "T11-8 无自动 fallback / 别名替换 / 模型切换路径",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "id": "T12-1a",
+      "name": "T12-1a run_image_qa=False → disabled 报告且不构造 Provider",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T12-1b",
+      "name": "T12-1b run_image_qa=False → 不创建 quality 目录 / index",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T12-2",
+      "name": "T12-2 max_qa_images=0 → Provider factory/chat 0",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T12-3",
+      "name": "T12-3 pipeline 顺序 image → image_qa → completeness（report 段存在）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T12-4",
+      "name": "T12-4 generate_images=False + run_image_qa=True 可读既有 manifest 执行 QA",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T12-3b",
+      "name": "T12-3b 既有 manifest 执行 QA（generate_images=False）",
+      "ok": true,
+      "detail": "selected=2 pass=2 calls=2"
+    },
+    {
+      "id": "T12-5",
+      "name": "T12-5 completeness 既有定义不因 QA 改变",
+      "ok": true,
+      "detail": "off={'scenes_total': 2, 'scenes_done': 2, 'storyboards_total': 2, 'storyboards_done': 2, 'assets_referenced': 5, 'assets_approved': 5} on={'scenes_total': 2, 'scenes_done': 2, 'storyboards_total': 2, 'storyboards_done': 2, 'assets_referenced': 5, 'assets_approved': 5}"
+    },
+    {
+      "id": "T12-6",
+      "name": "T12-6 run_report image_qa 段字段与实际一致",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T12-8",
+      "name": "T12-8 QA 不删除生成图",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T12-7",
+      "name": "T12-7 两张图/两场景的 profile、refs、Artifact、index 不串数据",
+      "ok": true,
+      "detail": "['S1_B1_SH1', 'S2_B1_SH1']"
+    },
+    {
+      "id": "T12-8b",
+      "name": "T12-8b 单图预检失败：不删除图片、其他选中项仍处理",
+      "ok": true,
+      "detail": "failed=1 pass=1"
+    },
+    {
+      "id": "T13-0",
+      "name": "T13-0 run_real_image_qa.py 存在",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T13-1a",
+      "name": "T13-1a 默认非 0 退出",
+      "ok": true,
+      "detail": "rc=2"
+    },
+    {
+      "id": "T13-1b",
+      "name": "T13-1b 默认打印脱敏计划",
+      "ok": true,
+      "detail": "{ \"stage\": \"14\", \"mode\": \"real_smoke\", \"provider\": \"<missing>\", \"model\": \"<missing>\", \"max_qa_images\": 1, \"p"
+    },
+    {
+      "id": "T13-1c",
+      "name": "T13-1c 默认路径真实调用 0",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T13-2",
+      "name": "T13-2 缺 provider → 拒绝（非 0）",
+      "ok": true,
+      "detail": "rc=2"
+    },
+    {
+      "id": "T13-2",
+      "name": "T13-2 缺 model → 拒绝（非 0）",
+      "ok": true,
+      "detail": "rc=2"
+    },
+    {
+      "id": "T13-2",
+      "name": "T13-2 缺 project → 拒绝（非 0）",
+      "ok": true,
+      "detail": "rc=2"
+    },
+    {
+      "id": "T13-2",
+      "name": "T13-2 缺执行开关 → 拒绝（非 0）",
+      "ok": true,
+      "detail": "rc=2"
+    },
+    {
+      "id": "T13-3",
+      "name": "T13-3 max_qa_images != 1 → 拒绝",
+      "ok": true,
+      "detail": "rc=2"
+    },
+    {
+      "id": "T13-4",
+      "name": "T13-4 计划显示 provider/model 与成本已知或未知",
+      "ok": true,
+      "detail": "{ \"stage\": \"14\", \"mode\": \"real_smoke\", \"provider\": \"fakevendor\", \"model\": \"fake-model\", \"max_qa_images\": 1, \"provider_retry\": \"disabled (max 1 attem"
+    },
+    {
+      "id": "T13-5a",
+      "name": "T13-5a 不显示 API key",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "id": "T13-5b",
+      "name": "T13-5b 不自动改 Config / 不自动 fallback",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "T13-6",
+      "name": "T13-6 无本会话授权 → 拒绝真实执行路径",
+      "ok": true,
+      "detail": "rc=2"
+    }
+  ]
+}
