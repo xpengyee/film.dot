@@ -52,9 +52,27 @@ MAX_REAL_IMAGE_REQUESTS = 3
 的 `max_images` 另行限制（见 orchestration/image_stage.py），两者是纵深防御。
 """
 
+MAX_REAL_VIDEO_SUBMISSIONS = 1
+"""Stage 15 真实视频**提交**硬上限（§15-B4 / D15-04）：缺省最多 1 次真实提交。
+
+视频昂贵、可计费，且异步提交后 task_id 必须先落盘再轮询。此处是"真实提交"这一层的
+最硬护栏；run_spec 的 `max_videos` 在编排层再限一次（cap=min(value, 1)），纵深防御。
+poll/download 是不同 kind（video_poll / video_download），**不占**提交数，
+但仍进入同一 APIRequestCounter 总审计。
+"""
+
+#: 视频轮询请求默认上限（None = 不限；编排层另有 max_polls 有界约束）
+MAX_REAL_VIDEO_POLLS: Optional[int] = None
+
+#: 视频下载请求默认上限（None = 不限；单任务最多 1 次成功下载流程，编排层约束）
+MAX_REAL_VIDEO_DOWNLOADS: Optional[int] = None
+
 DEFAULT_REAL_BUDGETS: Dict[str, Optional[int]] = {
     "vision": MAX_REAL_VISION_REQUESTS,
     "image": MAX_REAL_IMAGE_REQUESTS,     # ★ Stage 13 新增：image 独立桶
+    "video": MAX_REAL_VIDEO_SUBMISSIONS,  # ★ Stage 15 新增：video 提交独立桶（硬上限 1）
+    "video_poll": MAX_REAL_VIDEO_POLLS,   # ★ Stage 15 新增：轮询桶（默认不限，编排层有界）
+    "video_download": MAX_REAL_VIDEO_DOWNLOADS,  # ★ Stage 15 新增：下载桶
 }
 """各模态真实请求默认预算；None = 不限（未来模态按需加，不重构）。"""
 
@@ -251,7 +269,8 @@ class CountingProviderWrapper:
 
     # 需要计数的 Provider 调用方法（与 providers/base.py 接口族一一对应）
     _COUNTED = ("chat", "understand", "embed",
-                "generate_image", "generate_video", "synthesize")
+                "generate_image", "generate_video", "synthesize",
+                "submit_video", "get_video_task")
 
     def __init__(self, inner: Any, *, counter: Optional[APIRequestCounter] = None,
                  kind: Optional[str] = None, note: str = ""):
@@ -290,6 +309,12 @@ class CountingProviderWrapper:
     def synthesize(self, *args, **kwargs):
         return self._count_and_call("synthesize", args, kwargs)
 
+    def submit_video(self, *args, **kwargs):
+        return self._count_and_call("submit_video", args, kwargs)
+
+    def get_video_task(self, *args, **kwargs):
+        return self._count_and_call("get_video_task", args, kwargs)
+
 
 # ---------------------------------------------------------------------------
 # 进程级默认计数器（单例；测试/脚本可注入替换或 reset）
@@ -324,6 +349,9 @@ def reset_api_counter(**kw) -> APIRequestCounter:
 __all__ = [
     "MAX_REAL_VISION_REQUESTS",
     "MAX_REAL_IMAGE_REQUESTS",
+    "MAX_REAL_VIDEO_SUBMISSIONS",
+    "MAX_REAL_VIDEO_POLLS",
+    "MAX_REAL_VIDEO_DOWNLOADS",
     "DEFAULT_REAL_BUDGETS",
     "APIBudgetExceededError",
     "APIRequestCounter",

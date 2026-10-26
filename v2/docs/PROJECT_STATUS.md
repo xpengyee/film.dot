@@ -1,9 +1,10 @@
 # PROJECT_STATUS.md —— FilmAgent 项目状态
 
 > FilmAgent 的权威项目状态文档，任何新 **WorkBuddy 会话**开始时都应先读本文件。
-> 最后核对：2026-10-02。Stage 13 与 Stage 14（VLM Image QA）均已独立封存；Stage 14
+> 最后核对：2026-10-26。Stage 13 与 Stage 14（VLM Image QA）均已独立封存；Stage 14
 > 正式套件 198/198、rc=0（封存前机器报告）。`v0.2-stage13` 未移动；Stage 14 锚点
-> 使用 `git rev-parse v0.2-stage14^{commit}` 查询。Stage 15 尚未开工。
+> 使用 `git rev-parse v0.2-stage14^{commit}` 查询。Stage 15 已有 B 实现快照，
+> 本地离线套件复跑 85/85、rc=0；C 独立验证和 D 交付验收尚未完成，Stage 15 未封存。
 
 > **Stage 13-P 验收结论**：重复 `/api/v1` 缺陷已修复；T20r–T20t 覆盖公共域同步、
 > 公共域异步提交与轮询、业务空间域的最终 URL。现有报告为 146/146、rc=0、真实 API 0 次。
@@ -30,7 +31,7 @@
 
 ```text
 当前版本：V0.2（重构版基础设施）
-当前阶段：图像质量门（Stage 14：VLM Image QA）**已完成并独立封存**；Stage 15 尚未开工
+当前阶段：Stage 15（Video Generation）B 实现快照待 C 独立验证；Stage 14 已独立封存
 
 V0.2 Stage 8：PASS + 已封存
 V0.2 Stage 9：PASS + 已封存（Multi-Modal Provider Architecture）
@@ -45,6 +46,9 @@ V0.2 Stage 13：代码/测试/报告已交付并封存（`v0.2-stage13`；
 V0.2 Stage 14：VLM Image QA —— 代码/测试/报告已交付且独立 commit/tag（`v0.2-stage14`）；
                封存前正式套件 198/198、rc=0，真实 API/网络/模型切换 0/0/0；
                ★ 真实多图 VLM 连通性**未验证**（run_real_image_qa.py 仅为 preflight/guard scaffold）
+V0.2 Stage 15：Image-to-Video Clip Generation —— B 会话代码与测试快照已存在；
+               2026-10-26 本地复跑 85/85、rc=0（Mock/fake transport，0 真实 API/网络/模型切换）；
+               C 独立验证、Stage 14 历史回归、D 报告与封存验收尚未完成；不宣称 Stage 15 PASS。
 ```
 
 Stage 14 分四段（各自独立会话）：
@@ -641,14 +645,15 @@ Stage 15 准入：Review approved-like ∧ qa_decision == "pass" ∧ resume 锚�
 ## 7. 下一阶段
 
 ```text
-当前：Stage 14（VLM Image QA）**已完成并独立封存**（`v0.2-stage14`）
+最近稳定阶段：Stage 14（VLM Image QA）**已完成并独立封存**（`v0.2-stage14`）
       —— 阶段报告 `v2/logs/stage14_image_qa/stage14_report.md`（含契约笔记
          `stage14_contract_notes.md` 与 AC 逐条对照）
       正式套件 198/198、rc=0、真实 API/网络/模型切换 0/0/0；
       ★ 真实多图 VLM 连通性**未验证**（run_real_image_qa.py 仅为 preflight/guard scaffold）
 
-下一执行单元：Stage 15（Video Generation）按 `v2/docs/stages/Stage_15.md` 独立准入与实现；
-              **Stage 15 尚未开工，规格文件不属于 Stage 14 封存提交。**
+当前工作：Stage 15（Video Generation）B 实现快照待 C 独立验证，规格见
+          `v2/docs/stages/Stage_15.md`；云端交接见 `v2/docs/STAGE15_CLOUD_HANDOFF.md`。
+          Stage 15 尚未封存，C/D 不得把 B 自测当成最终验收。
 ```
 
 **Stage 14 完成内容**：把"生成图 vs 参考图"的逐字段裁决做成只读质量门 —— 按 approved 视觉档案的
@@ -686,7 +691,7 @@ Stage 13 出图（ComposedVisualInput → 真实图像；预算护栏 + 成本�
    ↓
 Stage 14 VLM QA（生成图 vs 参考图 → 逐字段裁决 + Stage 15 准入门）    ✅ 已独立封存（真实连通性未验证）
    ↓
-Stage 15 视频 → Stage 16 配音 → Stage 17 合成 → V0.2.0-alpha          ⏳ 未开工
+Stage 15 视频 → Stage 16 配音 → Stage 17 合成 → V0.2.0-alpha          ⏳ Stage 15 待独立验证
 ```
 
 路线图方向（方向性参考）：

@@ -16,18 +16,20 @@ from llm.client import (
 )
 from llm.router import Router, ProviderRoute
 from llm.request_counter import (
-    MAX_REAL_VISION_REQUESTS, MAX_REAL_IMAGE_REQUESTS, APIBudgetExceededError,
+    MAX_REAL_VISION_REQUESTS, MAX_REAL_IMAGE_REQUESTS,
+    MAX_REAL_VIDEO_SUBMISSIONS, APIBudgetExceededError,
     APIRequestCounter, CountingProviderWrapper,
     get_api_counter, set_api_counter, reset_api_counter,
 )
 from llm.providers import (
     Provider, TextProvider, VisionProvider, MultimodalProvider, EmbeddingProvider,
     ImageGenerationProvider, VideoGenerationProvider, AudioProvider,
-    ProviderResult, EmbeddingResult,
+    ProviderResult, VideoTaskResult, EmbeddingResult,
     MockTextProvider, MockVisionProvider, MockMultimodalProvider, MockEmbeddingProvider,
     OpenAICompatibleTextProvider, BailianTextProvider,
     OpenAICompatibleVisionProvider, OpenAICompatibleMultimodalProvider,
     MockImageGenerationProvider, OpenAICompatibleImageProvider, ImageGenerationError,
+    MockVideoProvider, BailianVideoProvider, VideoGenerationError,
     create_provider, get_default_provider,
 )
 
@@ -35,20 +37,22 @@ __all__ = [
     "LLMError", "LLMTimeoutError", "LLMConnectionError", "LLMRateLimitError",
     "LLMInternalError", "LLMRequestError", "LLMAuthenticationError",
     "LLMResponse", "LLMClient", "Router", "ProviderRoute",
-    # ---- API 请求计数 / 预算硬上限（Stage 10-B / Stage 13） ----
-    "MAX_REAL_VISION_REQUESTS", "MAX_REAL_IMAGE_REQUESTS", "APIBudgetExceededError",
+    # ---- API 请求计数 / 预算硬上限（Stage 10-B / Stage 13 / Stage 15） ----
+    "MAX_REAL_VISION_REQUESTS", "MAX_REAL_IMAGE_REQUESTS",
+    "MAX_REAL_VIDEO_SUBMISSIONS", "APIBudgetExceededError",
     "APIRequestCounter", "CountingProviderWrapper",
     "get_api_counter", "set_api_counter", "reset_api_counter",
-    # ---- Provider 抽象与实现（Stage 9 / 10-B / 13） ----
+    # ---- Provider 抽象与实现（Stage 9 / 10-B / 13 / 15） ----
     "Provider", "TextProvider", "VisionProvider", "MultimodalProvider",
     "EmbeddingProvider",
     "ImageGenerationProvider", "VideoGenerationProvider", "AudioProvider",
-    "ProviderResult", "EmbeddingResult",
+    "ProviderResult", "VideoTaskResult", "EmbeddingResult",
     "MockTextProvider", "MockVisionProvider", "MockMultimodalProvider",
     "MockEmbeddingProvider",
     "OpenAICompatibleTextProvider", "BailianTextProvider",
     "OpenAICompatibleVisionProvider", "OpenAICompatibleMultimodalProvider",
     "MockImageGenerationProvider", "OpenAICompatibleImageProvider",
     "ImageGenerationError",
+    "MockVideoProvider", "BailianVideoProvider", "VideoGenerationError",
     "create_provider", "get_default_provider",
 ]

@@ -47,6 +47,8 @@ from llm.providers.mock import (
 )
 from llm.providers.bailian_image import BailianImageProvider
 from llm.providers.mock_image import MockImageGenerationProvider
+from llm.providers.bailian_video import BailianVideoProvider
+from llm.providers.mock_video import MockVideoProvider
 from llm.providers.openai_compatible import OpenAICompatibleTextProvider
 from llm.providers.bailian import BailianTextProvider
 from llm.providers.openai_compatible_image import OpenAICompatibleImageProvider
@@ -78,9 +80,11 @@ def create_provider(
 
     if kind == "image":
         return _create_image_provider(vendor, cfg=cfg)
-    if kind in GENERATION_KINDS:          # video / audio：保持 Stage 9 的拒绝行为
+    if kind == "video":                       # ★ Stage 15：video 开通（mock + bailian 原生异步）
+        return _create_video_provider(vendor, cfg=cfg)
+    if kind in GENERATION_KINDS:              # audio：保持 Stage 9 的拒绝行为
         raise ValueError(
-            f"create_provider(kind={kind!r})：生成类 Provider（video/audio）"
+            f"create_provider(kind={kind!r})：生成类 Provider（audio）"
             f"是 Stage 9 预留接口，本阶段不实现、不提供 mock。"
         )
 
@@ -102,7 +106,7 @@ def create_provider(
             f"向量 Provider。请用 vendor='mock'。"
         )
     raise ValueError(
-        f"未知 Provider kind: {kind!r}（支持 text/vision/multimodal/embedding/image）")
+        f"未知 Provider kind: {kind!r}（支持 text/vision/multimodal/embedding/image/video）")
 
 
 def _create_text_provider(vendor: Optional[str], *, cfg: Optional[dict]) -> Provider:
@@ -146,6 +150,12 @@ def _image_vendors() -> set:
     """文生图 vendor（Config 档名以 `_image` 结尾）。Stage 13 新增。"""
     return {c["vendor"] for name, c in PROVIDERS.items()
             if name.endswith("_image") and c.get("kind") == "image"}
+
+
+def _video_vendors() -> set:
+    """图生视频 vendor（Config 档名以 `_video` 结尾）。Stage 15 新增。"""
+    return {c["vendor"] for name, c in PROVIDERS.items()
+            if name.endswith("_video") and c.get("kind") == "video"}
 
 
 def _create_image_provider(vendor: Optional[str], *, cfg: Optional[dict]) -> Provider:
@@ -214,6 +224,59 @@ def _create_image_provider(vendor: Optional[str], *, cfg: Optional[dict]) -> Pro
         model=model,
         vendor=vendor,
         size_separator=str(conf.get("size_separator", "x") or "x"),
+    )
+
+
+def _create_video_provider(vendor: Optional[str], *, cfg: Optional[dict]) -> Provider:
+    """图生视频工厂（Stage 15 §15-B4：只开 video 分支，mock + bailian 原生异步）。
+
+    护栏（沿用 Stage 13 image 范式）：
+        - vendor 缺省 → 明确报错（"缺省档"由 get_default_provider 按环境开关决定，
+          不静默回落 mock）；
+        - 未登记 vendor → 明确报错；
+        - `default_model` 为空 → 明确报错（不硬编码模型名）；
+        - base_url / API key 缺失 → 明确报错。
+    构造成功 ≠ 会发请求；每个真实提交仍受 APIRequestCounter 的 video 桶
+    预算硬上限（MAX_REAL_VIDEO_SUBMISSIONS=1）保护。
+    """
+    if vendor == "mock":
+        return MockVideoProvider()
+    if not vendor:
+        raise ValueError(
+            f"create_provider(kind='video')：生成类 Provider（video）需要显式 vendor"
+            f"（'mock' 或 {sorted(_video_vendors())}）；环境开关默认档请用 "
+            f"get_default_provider('video')。")
+    if vendor not in _video_vendors():
+        raise ValueError(
+            f"未知视频 vendor: {vendor!r}。支持 {sorted(_video_vendors() | {'mock'})}。")
+    conf = dict(cfg) if cfg else get_provider_config(f"{vendor}_video")
+    model = str(conf.get("default_model", "") or "")
+    if not model:
+        raise ValueError(
+            f"create_provider(kind='video', vendor={vendor!r})：生成类 Provider（video）"
+            f"已开通，但 config.PROVIDERS['{vendor}_video']['default_model'] 为空："
+            f"真实生成前请在 Config 填入具体视频模型名（不硬编码），或显式传 cfg 覆盖。")
+    base_url = str(conf.get("base_url", "") or "")
+    if not base_url:
+        raise ValueError(f"config.PROVIDERS['{vendor}_video']['base_url'] 为空。")
+    api_key = load_provider_api_key(vendor)
+    if not api_key:
+        raise ValueError(
+            f"vendor={vendor!r} 的 API key 未配置（环境变量 "
+            f"{conf.get('api_key_env', '')}）。真实生成需要先配置密钥。")
+    protocol = str(conf.get("protocol", "") or "").strip().lower()
+    if protocol and protocol != "dashscope_native_video":
+        raise ValueError(
+            f"config.PROVIDERS['{vendor}_video']['protocol']={protocol!r} 未知："
+            f"Stage 15 仅支持 'dashscope_native_video'（百炼原生异步视频）。")
+    return BailianVideoProvider(
+        api_key=api_key,
+        base_url=base_url,
+        model=model,
+        vendor=vendor,
+        create_path=conf.get("create_path") or None,
+        task_path=conf.get("task_path") or None,
+        poll_interval=float(conf.get("poll_interval", 3.0) or 3.0),
     )
 
 

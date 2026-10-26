@@ -184,6 +184,8 @@ class ProjectOrchestrator:
                            测试注入假下载器 → 0 网络）。
     :param qa_provider:    Stage 14 多模态 QA Provider；None 时保持惰性，只有
                            QA 开启、预检/resume 后仍有待处理图片才构造默认档。
+    :param video_provider: Stage 15 视频 Provider；None 时保持惰性，只有
+                           generate_videos=True 且 Stage 14 准入预检通过后才构造默认档。
     """
 
     def __init__(
@@ -200,6 +202,9 @@ class ProjectOrchestrator:
         image_log_dir: Optional[Path] = None,
         image_fetch: Optional[Callable[[str], bytes]] = None,
         qa_provider: Any = None,
+        video_provider: Any = None,
+        video_log_dir: Optional[Path] = None,
+        video_fetch: Optional[Callable[[str], bytes]] = None,
     ):
         if not isinstance(project, Project):
             raise OrchestrationError(
@@ -238,6 +243,11 @@ class ProjectOrchestrator:
         # ---- Stage 14：QA Provider 必须惰性构造。None 仅保存哨兵，直到
         # run_image_qa=True、预检/resume 完成且确有待执行项时才由 ImageQAStage 创建。
         self.qa_provider = qa_provider
+        # ---- Stage 15：视频 Provider 必须惰性构造。None 仅保存哨兵，直到
+        # generate_videos=True、Stage 14 准入预检完成且确有候选时才由 VideoStage 创建。
+        self.video_provider = video_provider
+        self.video_log_dir = Path(video_log_dir) if video_log_dir else None
+        self.video_fetch = video_fetch
         #: 本次 run 的项目级风格规范（run_spec["style_spec"]；STYLE 资产由它建档）
         self._style_spec: dict = {}
 
@@ -338,6 +348,7 @@ class ProjectOrchestrator:
                 "visual_assets": {"registered": [], "pending": []},
                 "image": {},
                 "image_qa": {},
+                "video": {},
             },
             "completeness": {
                 "scenes_total": len(scene_ids), "scenes_done": 0,
@@ -389,7 +400,11 @@ class ProjectOrchestrator:
         report["stages"]["image_qa"] = self._stage_image_qa(
             spec, handler, max_attempts, report)
 
-        # ---------------- ⑥ 齐备判定 + 落盘 ----------------
+        # ---------------- ⑥ 视频段（Stage 15，默认关闭） ----------------
+        report["stages"]["video"] = self._stage_videos(
+            storyboards, episode, spec, handler, report)
+
+        # ---------------- ⑦ 齐备判定 + 落盘 ----------------
         self._compute_completeness(scene_ids, entities, report)
         report["status"] = self._decide_status(report)
         return self._finish(report, run_id)
@@ -1037,6 +1052,29 @@ class ProjectOrchestrator:
             max_attempts=max_attempts,
         )
         return stage.run(spec)
+
+    # ------------------------------------------------------------------
+    # ⑥ 视频段（Stage 15；默认关闭；消费 Stage 13 image + Stage 14 QA 产物）
+    # ------------------------------------------------------------------
+    def _stage_videos(self, storyboards: Sequence[Tuple[int, Storyboard]], episode: int,
+                      spec: dict, handler: Callable, report: dict) -> dict:
+        """Stage 14 合格图 → 每 Shot 一个视频 clip（默认关闭，零副作用）。"""
+        from orchestration.video_stage import VideoStage
+        stage = VideoStage(
+            project_id=self.project_id,
+            project_dir=self.project_dir,
+            artifacts_dir=self.artifacts_dir,
+            store=self.store,
+            provider=self.video_provider,
+            registry=self.visual_registry,
+            review_handler=handler,
+            review_mode=str(report.get("review_mode", "") or ""),
+            log_dir=self.video_log_dir,
+            fetch=self.video_fetch,
+            episode=episode,
+            state=self.state,
+        )
+        return stage.run(storyboards, spec)
 
     # ------------------------------------------------------------------
     # 读盘 / 完成度 / 收尾

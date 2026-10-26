@@ -292,6 +292,32 @@ class OrchestrationState:
         entry = slot.get("images") if isinstance(slot, dict) else None
         return dict(entry) if isinstance(entry, dict) else None
 
+    # ---------------- Stage 15：视频段进度镜像（纯追加） ----------------
+    def record_video_stage(self, episode: int, scene_id: int, *, artifact: str = "",
+                           videos_generated: int = 0, budget_used: int = 0,
+                           budget_cap: int = 0, status: str = "approved") -> dict:
+        """记录某场景 Storyboard 的"视频段"进度（★纯追加，不新建第二套状态机）。
+
+        与 `record_image_stage` 同一纪律：`status` 只是对既有 Artifact / Review 结果的
+        **镜像**，不是新判据。`artifact` 是视频段产出的 **Storyboard 新版本**文件名。
+        """
+        ep = self._episode(episode, create=True)
+        slot = ep["scenes"].setdefault(str(int(scene_id)), {})
+        entry = _entry(status, artifact)
+        entry["videos_generated"] = int(videos_generated or 0)
+        entry["budget_used"] = int(budget_used or 0)
+        entry["budget_cap"] = int(budget_cap or 0)
+        slot["videos"] = entry
+        self.touch()
+        return dict(entry)
+
+    def video_entry(self, episode: int, scene_id: int) -> Optional[dict]:
+        """读某场景的视频段进度条目；不存在返回 None。"""
+        scenes = self._episode(episode).get("scenes") or {}
+        slot = scenes.get(str(int(scene_id))) or {}
+        entry = slot.get("videos") if isinstance(slot, dict) else None
+        return dict(entry) if isinstance(entry, dict) else None
+
     # ---------------- 视觉资产进度镜像 ----------------
     def record_visual_asset(self, kind: str, name: str, *, status: str,
                             asset_id: str = "", version: str = "",

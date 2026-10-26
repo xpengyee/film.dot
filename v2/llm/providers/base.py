@@ -131,6 +131,43 @@ class ProviderResult:
         )
 
 
+#: 视频异步任务状态（§9.4；终态为 succeeded/failed/canceled/unknown）
+VIDEO_TASK_STATUSES: tuple = (
+    "submitted", "pending", "running", "succeeded", "failed", "canceled", "unknown",
+)
+
+
+@dataclass
+class VideoTaskResult:
+    """图生视频异步任务的最小结构化结果（§9.4）。
+
+    video_url 只在内存中短暂使用（成功 URL 短期有效，须立即下载后丢弃）；
+    **绝不落盘、绝不写日志、绝不进 manifest**（含签名视频 URL 属敏感产物）。
+    error_message 必须是脱敏安全文本（不含 key / base64 / 签名 URL / 完整响应正文）。
+    usage 仅记录厂商返回的最小统计，缺省为空 dict（不编造）。
+    """
+
+    task_id: str = ""
+    status: str = "unknown"                     # VIDEO_TASK_STATUSES 之一
+    model: str = ""
+    request_id: str = ""
+    video_url: str = ""                         # 仅内存短暂使用
+    duration_ms: int = 0
+    retry_count: int = 0
+    error_code: str = ""
+    error_message: str = ""
+    usage: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def is_terminal(self) -> bool:
+        """是否处于终态（succeeded/failed/canceled/unknown）。"""
+        return self.status in ("succeeded", "failed", "canceled", "unknown")
+
+    @property
+    def is_success(self) -> bool:
+        return self.status == "succeeded"
+
+
 @dataclass
 class EmbeddingResult:
     """Embedding 调用的统一返回（stage9_plan §6.3）。"""
@@ -249,14 +286,63 @@ class ImageGenerationProvider(Provider):
 
 
 class VideoGenerationProvider(Provider):
-    """（预留）文生视频 Provider。同上，本阶段不实现。"""
+    """图生视频 Provider（Stage 15 落地）。
+
+    采用「提交 / 轮询」分离的异步契约（D15-03）：
+        submit_video(...)   提交一次真实生成任务，返回携带 task_id 的
+                            VideoTaskResult（status=submitted/pending/running/…）。
+        get_video_task(task_id)  轮询既有任务，返回最新状态。
+    保留 generate_video() 作为兼容/便捷接口（同步阻塞语义），但 VideoStage
+    不使用它完成真实异步流程。
+
+    提交是「可能计费」动作：编排层必须先在 manifest 原子落盘 task_id，
+    再开始 poll；进程中断后 resume 只能 poll 已保存的 task_id，绝不自动重新提交。
+    """
 
     kind = "video"
 
+    def submit_video(
+        self,
+        prompt: str,
+        *,
+        media: Any,
+        duration: float,
+        resolution: str,
+        negative_prompt: str = "",
+        prompt_extend: bool = False,
+        watermark: bool = False,
+        seed: Optional[int] = None,
+    ) -> "VideoTaskResult":
+        """提交一次图生视频任务。
+
+        :param prompt:          确定性运动提示词（不得再经文本模型润色）。
+        :param media:           首帧载体（本地路径 / data URL / 文件引用）。
+        :param duration:        请求时长（秒；调用方已完成规范化）。
+        :param resolution:      分辨率（canonical 记法，如 "1280*720"）。
+        :param negative_prompt: 负面提示词（来自 Stage 14 精确 negative_cues）。
+        :param prompt_extend:   是否允许厂商扩展 Prompt（缺省 False）。
+        :param watermark:       是否添加水印（显式值）。
+        :param seed:            可选随机种子。
+
+        :returns: VideoTaskResult（status 至少为 submitted/pending/running/failed）。
+        :raises LLMError 家族: 提交失败 / 配置缺失 / 预算耗尽。
+        """
+        raise NotImplementedError(f"{type(self).__name__} 未实现 submit_video()")
+
+    def get_video_task(self, task_id: str) -> "VideoTaskResult":
+        """查询既有异步任务的最新状态。
+
+        :returns: VideoTaskResult（终态包含 video_url，仅短期有效）。
+        :raises LLMError 家族: 查询失败 / task_id 非法 / 任务过期。
+        """
+        raise NotImplementedError(f"{type(self).__name__} 未实现 get_video_task()")
+
     def generate_video(self, prompt: str, *, shots: Optional[list] = None,
                        duration: Optional[float] = None) -> ProviderResult:
+        """同步阻塞便捷接口（兼容旧占位；VideoStage 不使用它完成真实异步流程）。"""
         raise NotImplementedError(
-            "VideoGenerationProvider 是 Stage 9 预留接口，未实现真实文生视频"
+            f"{type(self).__name__} 未实现同步 generate_video()；"
+            f"请使用 submit_video() / get_video_task() 异步契约。"
         )
 
 
@@ -278,6 +364,8 @@ GENERATION_KINDS = ("image", "video", "audio")
 __all__ = [
     "Provider",
     "ProviderResult",
+    "VideoTaskResult",
+    "VIDEO_TASK_STATUSES",
     "EmbeddingResult",
     "TextProvider",
     "VisionProvider",

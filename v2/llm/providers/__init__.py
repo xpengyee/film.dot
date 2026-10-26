@@ -8,6 +8,8 @@ V0.2 Stage 9 —— Provider 层统一出口（v2/llm/providers/__init__.py）
 from llm.providers.base import (
     Provider,
     ProviderResult,
+    VideoTaskResult,
+    VIDEO_TASK_STATUSES,
     EmbeddingResult,
     TextProvider,
     VisionProvider,
@@ -39,6 +41,15 @@ from llm.providers.openai_compatible_image import (
     ImageGenerationError,
 )
 from llm.providers.bailian_image import BailianImageProvider
+from llm.providers.mock_video import (
+    MockVideoProvider,
+    stable_task_id,
+    encode_mp4_fixture,
+)
+from llm.providers.bailian_video import (
+    BailianVideoProvider,
+    VideoGenerationError,
+)
 from llm.providers.bailian import BailianTextProvider
 from llm.providers.registry import (
     create_provider,
@@ -49,6 +60,8 @@ from llm.providers.registry import (
 __all__ = [
     "Provider",
     "ProviderResult",
+    "VideoTaskResult",
+    "VIDEO_TASK_STATUSES",
     "EmbeddingResult",
     "TextProvider",
     "VisionProvider",
@@ -69,6 +82,11 @@ __all__ = [
     "OpenAICompatibleImageProvider",
     "BailianImageProvider",
     "ImageGenerationError",
+    "MockVideoProvider",
+    "stable_task_id",
+    "encode_mp4_fixture",
+    "BailianVideoProvider",
+    "VideoGenerationError",
     "encode_png",
     "png_data_url",
     "BailianTextProvider",

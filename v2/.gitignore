@@ -48,6 +48,15 @@ logs/**/tmp_*/generated_images/
 **/generated_images/*.jpeg
 **/generated_images/*.webp
 
+# ---------- ★ Stage 15 视频产物（二进制大文件，绝不进版本库） ----------
+# 生成的真实视频片段是二进制大文件；保留 manifest.json（结构化证据）与报告。
+logs/**/generated_videos/
+**/generated_videos/*.mp4
+**/generated_videos/*.mov
+**/generated_videos/*.webm
+logs/**/video_generation_calls.jsonl
+logs/**/tmp_*/generated_videos/
+
 # Python 运行时缓存（根 .gitignore 已覆盖，这里冗余自包含）
 __pycache__/
 *.py[cod]

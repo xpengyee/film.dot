@@ -3,7 +3,7 @@
 > 回答"后面要去哪、以及**为什么是这个顺序**"。总控据此判断下一阶段；
 > 执行会话不需要读本文件（读 `CLAUDE.md` + `HANDOFF.md` + 本阶段开工指令即可）。
 >
-> 最后更新：Stage 14 独立封存后（VLM Image QA 正式套件 198/198；Stage 15 未开工）。
+> 最后更新：2026-10-26。Stage 14 已独立封存；Stage 15 B 实现快照本地离线复跑 85/85，仍待 C/D 验收。
 
 ---
 
@@ -41,8 +41,8 @@ V0.1 是"已跑通但不可维护的串行脚本"，V0.2 是"工程化的多智�
                     │     198/198 rc=0；★ 真实多图连通性未验证            │
                     └───────────────────────────────────────────────────┘
                      ↓ Stage 15 独立准入（规格 Stage_15.md）
-                    ┌─── 待开工（Stage 15+）─────────────────────────────┐
-                    │ 15  Video Generation（图 → 视频）                   │
+                    ┌─── Stage 15 待独立验证；Stage 16+ 待开工───────────┐
+                    │ 15  Video Generation（图 → 视频；B 快照 85/85）    │
                     │ 16  Audio / TTS（配音）                             │
                     │ 17  Assembly（合成成片）→ V0.2.0-alpha              │
                     └───────────────────────────────────────────────────┘
@@ -78,7 +78,7 @@ Stage 13 Image Generation          ComposedVisualInput → 真实图像（+ 成�
    ↓  （有真实生成的图，QA 才有被测对象）
 Stage 14 VLM QA                    生成图 vs 参考图 → 按 approved 档案字段逐项裁决   ✅ 已独立封存
    ↓  （单帧先验合格，才值得投入更贵的视频生成）                              （真实连通性未验证）
-Stage 15 Video Generation          Shot 序列 + CameraPlan → 视频                  ⏳ 未开工
+Stage 15 Video Generation          Shot 序列 + CameraPlan → 视频                  ⏳ B 快照待 C/D 验收
    ↓
 Stage 16 Audio / TTS               →  Stage 17 Assembly → V0.2.0-alpha
 ```
@@ -106,8 +106,8 @@ Stage 16 Audio / TTS               →  Stage 17 Assembly → V0.2.0-alpha
          + orchestration/image_qa_stage.py + pipeline 默认关闭接线；
       正式套件 198/198、rc=0、真实 API/网络/模型切换 0/0/0。
       ★ 真实多图 VLM 连通性**未验证**（run_real_image_qa.py 仅为 preflight/guard scaffold）。
-下一阶段：Stage 15（Video Generation）按 `v2/docs/stages/Stage_15.md` 独立准入；
-          **Stage 15 未开工，规格文件不属于 Stage 14 commit。**
+当前阶段：Stage 15（Video Generation）按 `v2/docs/stages/Stage_15.md` 推进；
+          B 实现快照离线复跑 85/85，待 C/D 独立验收；规格文件不属于 Stage 14 commit。
 阻塞：无已知架构阻塞。
       Stage 14 遗留（不影响交付，详见 stage14_report.md §15）：
         ① ★ 真实多图 VLM 连通性未验证；run_real_image_qa.py 是 preflight/guard scaffold

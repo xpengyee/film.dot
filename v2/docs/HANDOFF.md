@@ -5,11 +5,12 @@
 ## 1. 当前状态
 
 ```text
-当前状态：V0.2 Stage 14（VLM Image QA）**已完成并独立 commit/tag 封存**
+当前状态：V0.2 Stage 14（VLM Image QA）**已完成并独立 commit/tag 封存**；
+          Stage 15 B 实现快照待 C 独立验证（2026-10-26 本地离线复跑 85/85、rc=0）
 最近稳定版本：v0.2-stage14（`git rev-parse v0.2-stage14^{commit}` 查精确 hash）
 最近 commit：见 `git log --oneline -5`（不在此写死）
-下一执行单元：Stage 15（Video Generation）按 `v2/docs/stages/Stage_15.md` 独立开工；
-              **Stage 15 尚未开工，规格文件未纳入 Stage 14 commit。**
+下一执行单元：Stage 15-C 独立测试 / Debug，按 `v2/docs/stages/Stage_15.md` 验证 B 快照；
+              云端接续先读 `v2/docs/STAGE15_CLOUD_HANDOFF.md`。Stage 15 未封存、未打 tag。
 Stage 14：VLM Image QA（生成图 vs 参考图 → 按 approved 档案字段逐项裁决）
           ★ 只读质量门：不修改 Stage 13 manifest / 生成图 / Storyboard / ShotAsset / registry
           ★ 精确版本不漂移（禁 active fallback）；images[0]=生成图，refs 按 manifest 顺序
@@ -116,7 +117,7 @@ M  v2/orchestration/pipeline.py         （_stage_image_qa 接线 + qa_provider 
 - **跨会话记忆靠文档**：CLAUDE.md / PROJECT_STATUS.md / HANDOFF.md / Stage Report /
   Git；聊天记录不作为项目长期记忆。
 
-## 4. 新会话如何开始（当前：Stage 14 已封存；Stage 15 待独立开工）
+## 4. 新会话如何开始（当前：Stage 14 已封存；Stage 15 待独立验证）
 
 > **本项目的推进方式是「总控 / 执行会话分离」**（见 `ORCHESTRATION.md` §1.1）——
 > **不绑定任何特定工具**：任何能读写文件、执行命令的 AI 编码会话都能承担
@@ -136,8 +137,8 @@ M  v2/orchestration/pipeline.py         （_stage_image_qa 接线 + qa_provider 
       （含契约笔记 `stage14_contract_notes.md` —— Stage 14 的契约与 D14-REF-01 就写在那里）
    6. 当前 Git 状态：`git status --short`、`git log -5 --oneline`、
       九个 tag 指向、`git diff -- FilmAgent/`
-   7. **下一阶段开工指令**：`v2/docs/stages/Stage_15.md`（Stage 14 封存时未跟踪，
-      不属于 Stage 14 commit；Stage 15 仍须独立准入）
+   7. **当前阶段规格**：`v2/docs/stages/Stage_15.md`（不属于 Stage 14 封存提交）；
+      云端工作先按 `v2/docs/STAGE15_CLOUD_HANDOFF.md` 的 C 会话指令核对 B 快照。
    8. 与下一阶段直接相关的代码：`v2/orchestration/image_qa_stage.py`（Stage 15 准入的
       `downstream_eligible` 与 `qa_manifest.json` 来源）、
       `v2/agents/image_qa.py`（`qa_decision` 契约）、

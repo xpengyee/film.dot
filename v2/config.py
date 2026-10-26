@@ -156,6 +156,61 @@ def estimate_image_cost(model: str, size: Optional[str] = None):
 
 
 # ---------------------------------------------------------------------------
+# 视频价格配置（★ Stage 15 新增；与 token/图像计价**分开**，绝不混用）
+# ---------------------------------------------------------------------------
+VIDEO_PRICING: dict = {
+    # ★ 这里刻意**不登记任何视频模型价格** —— 这是护栏，不是缺陷（§15-B4）：
+    #   未登记 → manifest 与视频记账里 estimated_cost = null，
+    #   **绝不允许**拿文本 token 价格或图像单价冒充视频价格（计价单位不同）。
+    #
+    # 登记结构（视频按"每秒 / 按分辨率"计价）：
+    #   "<model>": {
+    #       "per_second": 0.50,                    # 每秒基础价
+    #       "by_resolution": {"1280*720": 0.50},   # 按分辨率覆盖 per_second（可选）
+    #       "currency": "CNY",
+    #       "note": "价格来源 + 查证日期（真账以平台为准）",
+    #   }
+    #
+    # 真实生成前，请人工把所选模型的单价填在这里；填了才会算出非 null 的成本。
+}
+
+
+def get_video_pricing(model: str) -> Optional[dict]:
+    """取某视频模型的价格配置；未登记返回 None。"""
+    return VIDEO_PRICING.get(str(model or ""))
+
+
+def estimate_video_cost(model: str, duration: Optional[float] = None,
+                        resolution: Optional[str] = None):
+    """按视频价格表估算**一段视频**的成本（§15-B4）。
+
+    :returns: (cost, currency)。未登记 / 价格字段不全 / 时长未知 → (None, currency)。
+              ★ 返回 None 表示"无法估算"，调用方必须如实记 null，
+              绝不用 token/图像价格冒充视频价格。
+    """
+    pricing = VIDEO_PRICING.get(str(model or ""))
+    if not pricing:
+        return None, ""
+    currency = str(pricing.get("currency", "") or "")
+    key = str(resolution or "")
+    by_res = pricing.get("by_resolution") or {}
+    per_second = pricing.get("per_second")
+    if key and key in by_res:
+        per_second = by_res[key]
+    if per_second is None:
+        return None, currency
+    if duration is None:
+        return None, currency
+    try:
+        dur = float(duration)
+    except (TypeError, ValueError):
+        return None, currency
+    if dur <= 0:
+        return None, currency
+    return round(float(per_second) * dur, 8), currency
+
+
+# ---------------------------------------------------------------------------
 # Provider 配置注册表（Stage 9 加法；不改动上面任何既有导出）
 # ---------------------------------------------------------------------------
 # 目标（stage9_plan §13）：给 Config 增加"供应商/Provider"维度，接百炼或本地模型时
@@ -284,6 +339,31 @@ PROVIDERS: dict = {
         "poll_interval": 3.0,
         "poll_timeout": 180.0,
     },
+
+    # ------------------------------------------------------------------
+    # ★ Stage 15：图生视频档（原生异步协议；厂商差异全部落这里，代码不硬编码模型名）
+    #
+    #   `protocol` 明确标识"原生异步视频协议"（dashscope_native_video）。
+    #   base_url 已含 `/api/v1`（公共域与业务空间域共用此语义，/api/v1 恰好一次）。
+    #   default_model 留空 = 真实生成前由用户 Config 填入精确模型名（不硬编码）。
+    # ------------------------------------------------------------------
+    "bailian_video": {
+        "kind": "video", "vendor": "bailian",
+        "protocol": "dashscope_native_video",
+        "base_url": "https://dashscope.aliyuncs.com/api/v1",
+        "default_model": "",              # 填具体视频模型名（人工填，绝不硬编码）
+        "api_key_env": "BAILIAN_API_KEY",
+        "pricing": None,                  # 视频价格走 VIDEO_PRICING（与 token/图像分开）
+        "create_path": "/services/aigc/video-generation/video-synthesis",
+        "task_path": "/tasks/{task_id}",
+        "poll_interval": 3.0,
+        "capabilities": {
+            "resolutions": ["1280*720", "720*1280"],
+            "duration": {"min": 2, "max": 10},
+            "prompt_extend": False,
+            "watermark": False,
+        },
+    },
 }
 
 
@@ -343,6 +423,9 @@ __all__ = [
     "IMAGE_PRICING",
     "get_image_pricing",
     "estimate_image_cost",
+    "VIDEO_PRICING",
+    "get_video_pricing",
+    "estimate_video_cost",
     "FILMAGENT_PROVIDER",
     "PROVIDER_ENV_API_KEYS",
     "PROVIDERS",

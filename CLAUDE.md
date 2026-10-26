@@ -9,8 +9,8 @@ This file provides guidance to WorkBuddy AI when working with code in this repos
 - **`FilmAgent/`（V0.1）**：冻结基准，是一套已跑通的串行流水线（casting → scenes_plan → lines_generate → … → clean_script），依赖 DeepSeek（`LLMCaller.py` + `Prompt/`）。**任何情况下不得修改。**
 - **`v2/`（V0.2）**：全新重写的基础设施——可测试、可扩展、有人工审核的多智能体框架，按阶段推进，每阶段由独立的"开工指令"文件（位于 `D:\AI\FilmAgent\`）控制。
 
-**当前进度：阶段 8 ～ 14（Canonical Schema / Provider Architecture / Visual Asset Layer / StoryboardAgent / Project 生命周期编排层 / Image Generation / VLM Image QA）均已完成并独立封存；
-阶段 15（Video Generation）尚未开工。Stage 14 封存锚点：`git rev-parse v0.2-stage14^{commit}`。**
+**当前进度（2026-10-26）：阶段 8 ～ 14（Canonical Schema / Provider Architecture / Visual Asset Layer / StoryboardAgent / Project 生命周期编排层 / Image Generation / VLM Image QA）均已完成并独立封存；
+阶段 15（Video Generation）已有 B 会话实现和 85/85 离线测试快照，仍待 C 独立验证、D 交付验收，未创建 Stage 15 tag。Stage 14 封存锚点：`git rev-parse v0.2-stage14^{commit}`。云端接续先读 `v2/docs/STAGE15_CLOUD_HANDOFF.md`。**
 阶段 8：Canonical Schema 落地——`Project → Scene → Beat → Shot → Asset`（`v2/core/shot.py`），
 V0.1 经 `v2/core/adapter.py` 双向无损转换，新增 4 个校验器，Agent 公共骨架抽到 `v2/agents/base.py`。
 阶段 9：Multi-Modal **Provider Architecture** —— 把"用哪个模型、怎么调用"从业务代码剥离进
@@ -368,8 +368,8 @@ Agent 只做"一个明确的业务任务"，**绝不**：自己找 API key、自
   该脚本对 `bailian` 检查 `DASHSCOPE_API_KEY` 而 `config.PROVIDERS["bailian_vision"]` 用
   `BAILIAN_API_KEY` —— **环境变量名不一致，真实冒烟前必须先统一**（开放问题，未修代码）；
   `test_report.json` 的 `regressions` 为空、未承载 Stage 13 历史回归详情（覆盖边界见阶段报告 §9）。
-- 下一步：Stage 14 已单独 commit + tag `v0.2-stage14`；Stage 15（Video Generation）须按
-  `v2/docs/stages/Stage_15.md` 的独立准入、实现和验收纪律推进。**Stage 15 尚未开工。**
+- 下一步：Stage 14 已单独 commit + tag `v0.2-stage14`；Stage 15（Video Generation）已有
+  B 实现与 85/85 离线测试快照，须按 `v2/docs/stages/Stage_15.md` 完成 C 独立验证和 D 验收。
   验收要点：本报告 §11 的 14 条 Acceptance Criteria；`stage14_report.md` +
   六份长期文档 + 冻结边界/泄漏扫描 + intended commit file list。
   启动后续会话（工作目录 `D:\AI\FilmAgent-main`；**不要用 `claude` CLI** → 读 CLAUDE.md →

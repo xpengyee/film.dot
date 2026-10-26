@@ -39,6 +39,16 @@ from orchestration.image_qa_stage import (
     QA_DIR_NAME,
     QA_MANIFEST_FILENAME,
 )
+from orchestration.video_stage import (
+    VideoStage,
+    render_motion_prompt,
+    motion_input_hash,
+    normalize_duration,
+    half_up_round,
+    VIDEO_DIR_NAME,
+    VIDEO_MANIFEST_FILENAME,
+    VIDEO_LEDGER_FILENAME,
+)
 from orchestration.pipeline import ProjectOrchestrator
 
 __all__ = [
@@ -62,4 +72,13 @@ __all__ = [
     "ImageQAStage",
     "QA_DIR_NAME",
     "QA_MANIFEST_FILENAME",
+    # ---- Stage 15：Image-to-Video ----
+    "VideoStage",
+    "render_motion_prompt",
+    "motion_input_hash",
+    "normalize_duration",
+    "half_up_round",
+    "VIDEO_DIR_NAME",
+    "VIDEO_MANIFEST_FILENAME",
+    "VIDEO_LEDGER_FILENAME",
 ]
